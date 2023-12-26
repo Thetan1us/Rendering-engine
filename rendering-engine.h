@@ -1,9 +1,10 @@
 #pragma once
 
-#include <stdint.h>
-#include <stddef.h>
-#include <float.h>
-#include <stdio.h>
+#include <cstdint>
+#include <cstddef>
+#include <cfloat>
+#include <iostream>
+#include <cassert>
 
 typedef int8_t i8;
 typedef int16_t i16;
@@ -27,7 +28,7 @@ typedef int32_t b32;
 #define local_global static
 
 #define snprintf _snprintf_s
-#define Assert(Expression) if (!(Expression)) { __debugbreak(); }
+#define Assert(Expression) if (!(Expression)) { DebugBreak(); }
 #define InvalidCodePath Assert(!"Invalid Code Path")
 #define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0]))
 
@@ -40,4 +41,8 @@ struct GlobalState
 {
 	HWND windowHandle;
 	b32 isRunning;
+	HDC deviceContext;
+	u32 frameBufferWidth;
+	u32 frameBufferHeight;
+	u32* frameBufferPixels;
 };
