@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cfloat>
 #include <iostream>
-#include <cassert>
+#include <vector>
 
 typedef int8_t i8;
 typedef int16_t i16;
@@ -24,9 +24,6 @@ typedef uintptr_t umm;
 
 typedef int32_t b32;
 
-#define global static
-#define local_global static
-
 #define snprintf _snprintf_s
 #define Assert(Expression) if (!(Expression)) { DebugBreak(); }
 #define InvalidCodePath Assert(!"Invalid Code Path")
@@ -44,5 +41,7 @@ struct GlobalState
 	HDC deviceContext;
 	u32 frameBufferWidth;
 	u32 frameBufferHeight;
-	u32* frameBufferPixels;
+	std::vector<u32> frameBufferPixels;
+
+	float currentOffset;
 };

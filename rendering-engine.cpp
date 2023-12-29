@@ -36,6 +36,8 @@ int WinMain(
 	int       nShowCmd)
 {
 	globalState.isRunning = true;
+	LARGE_INTEGER timerFrequency{};
+	Assert(QueryPerformanceFrequency(&timerFrequency));
 
 	{
 		WNDCLASSA windowClass{};
@@ -74,11 +76,19 @@ int WinMain(
 		GetClientRect(globalState.windowHandle, &clientRect);
 		globalState.frameBufferWidth = clientRect.right - clientRect.left;
 		globalState.frameBufferHeight = clientRect.bottom - clientRect.top;
-		globalState.frameBufferPixels = new u32[sizeof(u32) * globalState.frameBufferHeight * globalState.frameBufferWidth];
+		globalState.frameBufferPixels.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
 	}
+
+	LARGE_INTEGER startTime{};
+	LARGE_INTEGER endTime{};
+	Assert(QueryPerformanceCounter(&startTime));
 
 	while (globalState.isRunning)
 	{
+		Assert(QueryPerformanceCounter(&endTime));
+		float frameTime = float(endTime.QuadPart - startTime.QuadPart) / float(timerFrequency.QuadPart);
+		startTime = endTime;
+
 		MSG message{};
 		while (PeekMessageA(&message, globalState.windowHandle, 0, 0, PM_REMOVE))
 		{
@@ -94,13 +104,22 @@ int WinMain(
 			}
 		}
 
+		float speed = 200.0f;
+		globalState.currentOffset += speed * frameTime;
+
 		for (u32 y = 0; y < globalState.frameBufferHeight; ++y)
 		{
 			for (u32 x = 0; x < globalState.frameBufferWidth; ++x)
 			{
 				u32 pixelID = y * globalState.frameBufferWidth + x;
-				// FIX 
-				globalState.frameBufferPixels[pixelID] = 0xFF0000FF;
+
+				u8 alpha = 255;
+				u8 red = 0;
+				u8 green = (u8)(y + globalState.currentOffset);
+				u8 blue = (u8)(x - globalState.currentOffset);
+				u32 pixelColor = (u32)alpha << 24 | (u32)red << 16 | (u32)green << 8 | (u32)blue;
+
+				globalState.frameBufferPixels[pixelID] = pixelColor;
 			}
 		}
 
@@ -119,7 +138,6 @@ int WinMain(
 		bitMapInfo.bmiHeader.biCompression = BI_RGB;
 		bitMapInfo.bmiHeader.biSizeImage = 0;
 
-
 		Assert(StretchDIBits(
 			globalState.deviceContext,
 			0,
@@ -130,7 +148,7 @@ int WinMain(
 			0,
 			globalState.frameBufferWidth,
 			globalState.frameBufferHeight,
-			globalState.frameBufferPixels,
+			globalState.frameBufferPixels.data(),
 			&bitMapInfo,
 			DIB_RGB_COLORS,
 			SRCCOPY
