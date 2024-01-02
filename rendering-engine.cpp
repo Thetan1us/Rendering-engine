@@ -1,9 +1,15 @@
-
-#include <Windows.h>
-
 #include "rendering-engine.h"
+#include "rendering-math.h"
 
 static GlobalState globalState;
+
+V2 projectPoint(V3 pos)
+{
+	V2 result = pos.m_xy / pos.m_z;
+	result = 0.5f * (result + v2(1)) * v2(globalState.frameBufferWidth, globalState.frameBufferHeight);
+	
+	return result;
+}
 
 LRESULT Win32WindowCallback(
 	HWND hWnd,
@@ -86,7 +92,7 @@ int WinMain(
 	while (globalState.isRunning)
 	{
 		Assert(QueryPerformanceCounter(&endTime));
-		float frameTime = float(endTime.QuadPart - startTime.QuadPart) / float(timerFrequency.QuadPart);
+		f32 frameTime = f32(endTime.QuadPart - startTime.QuadPart) / f32(timerFrequency.QuadPart);
 		startTime = endTime;
 
 		MSG message{};
@@ -104,8 +110,7 @@ int WinMain(
 			}
 		}
 
-		float speed = 200.0f;
-		globalState.currentOffset += speed * frameTime;
+		// All pixels are 0
 
 		for (u32 y = 0; y < globalState.frameBufferHeight; ++y)
 		{
@@ -114,9 +119,9 @@ int WinMain(
 				u32 pixelID = y * globalState.frameBufferWidth + x;
 
 				u8 alpha = 255;
-				u8 red = 0;
-				u8 green = (u8)(y + globalState.currentOffset);
-				u8 blue = (u8)(x - globalState.currentOffset);
+				u8 red = (u8)0;
+				u8 green = (u8)0;
+				u8 blue = (u8)0;
 				u32 pixelColor = (u32)alpha << 24 | (u32)red << 16 | (u32)green << 8 | (u32)blue;
 
 				globalState.frameBufferPixels[pixelID] = pixelColor;

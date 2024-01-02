@@ -18,9 +18,15 @@
     <ClCompile Include="rendering-engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="rendering-math.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rendering-engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rendering-math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
