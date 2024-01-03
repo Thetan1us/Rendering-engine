@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "rendering-engine.h"
 #include "rendering-math.h"
 
@@ -110,7 +112,7 @@ int WinMain(
 			}
 		}
 
-		// All pixels are 0
+		// All pixels are set to 0
 
 		for (u32 y = 0; y < globalState.frameBufferHeight; ++y)
 		{
@@ -127,6 +129,36 @@ int WinMain(
 				globalState.frameBufferPixels[pixelID] = pixelColor;
 			}
 		}
+		
+		for(u32 triangleID = 0; triangleID < 10; ++triangleID)
+		{
+			f32 depth = std::powf(2.0f, triangleID + 1);
+			V3 points[3] =
+			{
+				V3{ -1.0f, -0.5f, depth },
+				V3{ 1.0f, -0.5f, depth },
+				V3{ 0.0f, 0.5f, depth }
+			};
+
+			for (int pointID = 0; pointID < ArrayCount(points); ++pointID)
+			{
+				V3 transformedPos = points[pointID] + v3(cos(globalState.currentAngle), sin(globalState.currentAngle), 0);
+				V2 pixelPos = projectPoint(transformedPos);
+
+				if (pixelPos.m_x >= 0.0f && pixelPos.m_x < globalState.frameBufferWidth &&
+					pixelPos.m_y >= 0.0f && pixelPos.m_y < globalState.frameBufferHeight)
+				{
+					u32 pixelID = u32(pixelPos.m_y) * globalState.frameBufferWidth + (u32)pixelPos.m_x;
+					globalState.frameBufferPixels[pixelID] = 0xFFFF00FF;
+				}
+
+			}
+		}
+
+		globalState.currentAngle += frameTime;
+		
+		if (globalState.currentAngle >= 2.0f * Pi32)
+			globalState.currentAngle = 0.0f;
 
 		RECT clientRect{};
 		GetClientRect(globalState.windowHandle, &clientRect);

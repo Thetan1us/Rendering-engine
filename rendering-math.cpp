@@ -57,3 +57,21 @@ V2 operator/(V2 a, f32 b)
 	result.m_y = a.m_y / b;
 	return result;
 }
+
+V3 v3(f32 x, f32 y, f32 z)
+{
+	V3 result{};
+	result.m_x = x;
+	result.m_y = y;
+	result.m_z = z;
+	return result;
+}
+
+V3 operator+(V3 a, V3 b)
+{
+	V3 result{};
+	result.m_x = a.m_x + b.m_x;
+	result.m_y = a.m_y + b.m_y;
+	result.m_z = a.m_z + b.m_z;
+	return result;
+}

@@ -1,5 +1,7 @@
 #pragma once 
 
+static f32 Pi32 = 3.14159265359f;
+
 union V2
 {
 	struct
@@ -33,3 +35,5 @@ V2 operator+(V2 a, V2 b);
 V2 operator*(f32 a, V2 b);
 V2 operator*(V2 a, V2 b);
 V2 operator/(V2 a, f32 b);
+V3 v3(f32 x, f32 y, f32 z);
+V3 operator+(V3 a, V3 b);

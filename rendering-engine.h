@@ -5,6 +5,7 @@
 #include <cfloat>
 #include <iostream>
 #include <vector>
+
 #include <Windows.h>
 
 typedef int8_t i8;
@@ -32,11 +33,12 @@ typedef double f64;
 
 struct GlobalState
 {
-	HWND windowHandle;
-	bool isRunning;
-	HDC deviceContext;
-	u32 frameBufferWidth;
-	u32 frameBufferHeight;
-	std::vector<u32> frameBufferPixels;
-};
+	HWND windowHandle{};
+	bool isRunning{};
+	HDC deviceContext{};
+	u32 frameBufferWidth{};
+	u32 frameBufferHeight{};
+	std::vector<u32> frameBufferPixels{};
 
+	f32 currentAngle;
+};
