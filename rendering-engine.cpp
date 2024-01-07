@@ -9,8 +9,44 @@ V2 projectPoint(V3 pos)
 {
 	V2 result = pos.m_xy / pos.m_z;
 	result = 0.5f * (result + v2(1)) * v2(globalState.frameBufferWidth, globalState.frameBufferHeight);
-	
 	return result;
+}
+
+f32 vectorProduct(V2 a, V2 b)
+{
+	f32 result = a.m_x * b.m_y - a.m_y * b.m_x;
+	return result;
+}
+
+void drawTriangle(V3 *points, u32 color)
+{
+	V2 pointA = projectPoint(points[0]);
+	V2 pointB = projectPoint(points[1]);
+	V2 pointC = projectPoint(points[2]);
+
+	V2 triangleEdge0 = pointB - pointA;
+	V2 triangleEdge1 = pointC - pointB;
+	V2 triangleEdge2 = pointA - pointC;
+
+	for (u32 y = 0; y < globalState.frameBufferHeight; ++y)
+	{
+		for (u32 x = 0; x < globalState.frameBufferWidth; ++x)
+		{
+			V2 pixelPoint = v2(x, y) + v2(0.5f, 0.5f);
+
+			V2 centerPixelVect0 = pixelPoint - pointA;
+			V2 centerPixelVect1 = pixelPoint - pointB;
+			V2 centerPixelVect2 = pixelPoint - pointC;
+
+			if (vectorProduct(centerPixelVect0, triangleEdge0) >= 0.0f &&
+				vectorProduct(centerPixelVect1, triangleEdge1) >= 0.0f &&
+				vectorProduct(centerPixelVect2, triangleEdge2) >= 0.0f)
+			{
+				u32 pixelID = y * globalState.frameBufferWidth + x;
+				globalState.frameBufferPixels[pixelID] = color;
+			}
+		}
+	}
 }
 
 LRESULT Win32WindowCallback(
@@ -130,33 +166,27 @@ int WinMain(
 			}
 		}
 		
+
 		for(u32 triangleID = 0; triangleID < 10; ++triangleID)
 		{
-			f32 depth = std::powf(2.0f, triangleID + 1);
+			f32 depth = std::powf(2.0f, triangleID);
 			V3 points[3] =
 			{
 				V3{ -1.0f, -0.5f, depth },
-				V3{ 1.0f, -0.5f, depth },
-				V3{ 0.0f, 0.5f, depth }
+				V3{ 0.0f, 0.5f, depth },
+				V3{ 1.0f, -0.5f, depth }
 			};
 
 			for (int pointID = 0; pointID < ArrayCount(points); ++pointID)
 			{
-				V3 transformedPos = points[pointID] + v3(cos(globalState.currentAngle), sin(globalState.currentAngle), 0);
-				V2 pixelPos = projectPoint(transformedPos);
-
-				if (pixelPos.m_x >= 0.0f && pixelPos.m_x < globalState.frameBufferWidth &&
-					pixelPos.m_y >= 0.0f && pixelPos.m_y < globalState.frameBufferHeight)
-				{
-					u32 pixelID = u32(pixelPos.m_y) * globalState.frameBufferWidth + (u32)pixelPos.m_x;
-					globalState.frameBufferPixels[pixelID] = 0xFFFF00FF;
-				}
-
+				V3 transformedPoint = points[pointID] + v3(cos(globalState.currentAngle), sin(globalState.currentAngle), 0);
+				points[pointID] = transformedPoint;
 			}
+
+			drawTriangle(points, 0xFFFF00FF);
 		}
 
 		globalState.currentAngle += frameTime;
-		
 		if (globalState.currentAngle >= 2.0f * Pi32)
 			globalState.currentAngle = 0.0f;
 

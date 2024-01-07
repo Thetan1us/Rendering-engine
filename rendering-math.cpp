@@ -34,6 +34,14 @@ V2 operator+(V2 a, V2 b)
 	return result;
 }
 
+V2 operator-(V2 a, V2 b)
+{
+	V2 result{};
+	result.m_x = a.m_x - b.m_x;
+	result.m_y = a.m_y - b.m_y;
+	return result;
+}
+
 V2 operator*(f32 a, V2 b)
 {
 	V2 result{};
