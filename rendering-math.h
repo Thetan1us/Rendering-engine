@@ -1,6 +1,6 @@
 #pragma once 
 
-static f32 Pi32 = 3.14159265359f;
+static f32 Pi32 = 3.14159f;
 
 union V2
 {

@@ -7,8 +7,12 @@ static GlobalState globalState;
 
 V2 projectPoint(V3 pos)
 {
-	V2 result = pos.m_xy / pos.m_z;
-	result = 0.5f * (result + v2(1)) * v2(globalState.frameBufferWidth, globalState.frameBufferHeight);
+	// NDC
+	V2 result{};
+	result = pos.m_xy / pos.m_z;
+	// Pixels
+	result = 0.5f * (result + v2(1.0f));
+	result = result * v2(globalState.frameBufferWidth, globalState.frameBufferHeight);
 	return result;
 }
 
@@ -101,8 +105,8 @@ int WinMain(
 			WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
-			1366,
-			768,
+			1280,
+			720,
 			NULL,
 			NULL,
 			hInstance,
@@ -120,6 +124,9 @@ int WinMain(
 		GetClientRect(globalState.windowHandle, &clientRect);
 		globalState.frameBufferWidth = clientRect.right - clientRect.left;
 		globalState.frameBufferHeight = clientRect.bottom - clientRect.top;
+
+		globalState.frameBufferHeight = 300;
+		globalState.frameBufferWidth = 300;
 		globalState.frameBufferPixels.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
 	}
 
@@ -165,11 +172,23 @@ int WinMain(
 				globalState.frameBufferPixels[pixelID] = pixelColor;
 			}
 		}
-		
 
-		for(u32 triangleID = 0; triangleID < 10; ++triangleID)
+		globalState.currentAngle += frameTime;
+		if (globalState.currentAngle >= 2.0f * Pi32)
+			globalState.currentAngle = 0.0f;
+		
+		u32 colors[] =
 		{
-			f32 depth = std::powf(2.0f, triangleID);
+			0xFFFF00FF,
+			0xFFFF0000,
+			0xFF00FF00,
+			0xFF0000FF,
+			0xFFFFFFFF,
+		};
+
+		for (int triangleID = 10; triangleID >=0; --triangleID)
+		{
+			f32 depth = std::powf(2.0f, triangleID + 1);
 			V3 points[3] =
 			{
 				V3{ -1.0f, -0.5f, depth },
@@ -183,12 +202,8 @@ int WinMain(
 				points[pointID] = transformedPoint;
 			}
 
-			drawTriangle(points, 0xFFFF00FF);
+			drawTriangle(points, colors[triangleID % ArrayCount(colors)]);
 		}
-
-		globalState.currentAngle += frameTime;
-		if (globalState.currentAngle >= 2.0f * Pi32)
-			globalState.currentAngle = 0.0f;
 
 		RECT clientRect{};
 		GetClientRect(globalState.windowHandle, &clientRect);
