@@ -22,6 +22,22 @@ f32 vectorProduct(V2 a, V2 b)
 	return result;
 }
 
+std::vector<u32> findMinMaxPoints(const V2 &pointA, const V2 &pointB, const V2 &pointC)
+{
+	std::vector<u32> result{};
+	u32 edgePointLeft = (std::fmin)((u32)pointA.m_x, (std::fmin)((u32)pointB.m_x, (u32)pointC.m_x)) - 1;
+	u32 edgePointRight = (std::fmax)((u32)pointA.m_x, (std::fmax)((u32)pointB.m_x, (u32)pointC.m_x)) + 1;
+	u32 edgePointBottom = (std::fmin)((u32)pointA.m_y, (std::fmin)((u32)pointB.m_y, (u32)pointC.m_y)) - 1;
+	u32 edgePointTop = (std::fmax)((u32)pointA.m_y, (std::fmax)((u32)pointB.m_y, (u32)pointC.m_y)) + 1;
+
+	result.push_back(edgePointLeft);
+	result.push_back(edgePointRight);
+	result.push_back(edgePointBottom);
+	result.push_back(edgePointTop);
+
+	return result;
+}
+
 void drawTriangle(V3 *points, u32 color)
 {
 	V2 pointA = projectPoint(points[0]);
@@ -32,9 +48,11 @@ void drawTriangle(V3 *points, u32 color)
 	V2 triangleEdge1 = pointC - pointB;
 	V2 triangleEdge2 = pointA - pointC;
 
-	for (u32 y = 0; y < globalState.frameBufferHeight; ++y)
+	std::vector<u32> minMaxPoints = findMinMaxPoints(pointA, pointB, pointC);
+
+	for (u32 y = minMaxPoints[2]; y < minMaxPoints[3]; ++y)
 	{
-		for (u32 x = 0; x < globalState.frameBufferWidth; ++x)
+		for (u32 x = minMaxPoints[0]; x < minMaxPoints[1]; ++x)
 		{
 			V2 pixelPoint = v2(x, y) + v2(0.5f, 0.5f);
 
@@ -105,8 +123,8 @@ int WinMain(
 			WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
-			1280,
-			720,
+			1366,
+			768,
 			NULL,
 			NULL,
 			hInstance,
@@ -125,8 +143,6 @@ int WinMain(
 		globalState.frameBufferWidth = clientRect.right - clientRect.left;
 		globalState.frameBufferHeight = clientRect.bottom - clientRect.top;
 
-		globalState.frameBufferHeight = 300;
-		globalState.frameBufferWidth = 300;
 		globalState.frameBufferPixels.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
 	}
 
@@ -186,12 +202,12 @@ int WinMain(
 			0xFFFFFFFF,
 		};
 
-		for (int triangleID = 10; triangleID >=0; --triangleID)
+		for (int triangleID = 10; triangleID >= 0; --triangleID)
 		{
-			f32 depth = std::powf(2.0f, triangleID + 1);
+			f32 depth = std::powf(2.0f, triangleID + 1.0f);
 			V3 points[3] =
 			{
-				V3{ -1.0f, -0.5f, depth },
+				V3{ -0.9f, -0.5f, depth },
 				V3{ 0.0f, 0.5f, depth },
 				V3{ 1.0f, -0.5f, depth }
 			};
