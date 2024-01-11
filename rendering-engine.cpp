@@ -22,21 +22,23 @@ f32 vectorProduct(V2 a, V2 b)
 	return result;
 }
 
-std::vector<u32> findMinMaxPoints(const V2 &pointA, const V2 &pointB, const V2 &pointC)
-{
-	std::vector<u32> result{};
-	u32 edgePointLeft = (std::fmin)((u32)pointA.m_x, (std::fmin)((u32)pointB.m_x, (u32)pointC.m_x)) - 1;
-	u32 edgePointRight = (std::fmax)((u32)pointA.m_x, (std::fmax)((u32)pointB.m_x, (u32)pointC.m_x)) + 1;
-	u32 edgePointBottom = (std::fmin)((u32)pointA.m_y, (std::fmin)((u32)pointB.m_y, (u32)pointC.m_y)) - 1;
-	u32 edgePointTop = (std::fmax)((u32)pointA.m_y, (std::fmax)((u32)pointB.m_y, (u32)pointC.m_y)) + 1;
+//For optimization
 
-	result.push_back(edgePointLeft);
-	result.push_back(edgePointRight);
-	result.push_back(edgePointBottom);
-	result.push_back(edgePointTop);
-
-	return result;
-}
+//std::vector<u32> findMinMaxPoints(const V2 &pointA, const V2 &pointB, const V2 &pointC)
+//{
+//	std::vector<u32> result{};
+//	u32 edgePointLeft = (std::fmin)((u32)pointA.m_x, (std::fmin)((u32)pointB.m_x, (u32)pointC.m_x));
+//	u32 edgePointRight = (std::fmax)((u32)pointA.m_x, (std::fmax)((u32)pointB.m_x, (u32)pointC.m_x));
+//	u32 edgePointBottom = (std::fmin)((u32)pointA.m_y, (std::fmin)((u32)pointB.m_y, (u32)pointC.m_y));
+//	u32 edgePointTop = (std::fmax)((u32)pointA.m_y, (std::fmax)((u32)pointB.m_y, (u32)pointC.m_y));
+//
+//	result.push_back(edgePointLeft);
+//	result.push_back(edgePointRight);
+//	result.push_back(edgePointBottom);
+//	result.push_back(edgePointTop);
+//
+//	return result;
+//}
 
 void drawTriangle(V3 *points, u32 color)
 {
@@ -48,11 +50,17 @@ void drawTriangle(V3 *points, u32 color)
 	V2 triangleEdge1 = pointC - pointB;
 	V2 triangleEdge2 = pointA - pointC;
 
-	std::vector<u32> minMaxPoints = findMinMaxPoints(pointA, pointB, pointC);
+	bool isTopLeft0 = (triangleEdge0.m_x >= 0.0f && triangleEdge0.m_y > 0.0f) || (triangleEdge0.m_x > 0 && triangleEdge0.m_y == 0.0f);
+	bool isTopLeft1 = (triangleEdge1.m_x >= 0.0f && triangleEdge1.m_y > 0.0f) || (triangleEdge1.m_x > 0 && triangleEdge1.m_y == 0.0f);
+	bool isTopLeft2 = (triangleEdge2.m_x >= 0.0f && triangleEdge2.m_y > 0.0f) || (triangleEdge2.m_x > 0 && triangleEdge2.m_y == 0.0f);
 
-	for (u32 y = minMaxPoints[2]; y < minMaxPoints[3]; ++y)
+	//std::vector<u32> minMaxPoints = findMinMaxPoints(pointA, pointB, pointC);
+
+	for (u32 y = 0; y < globalState.frameBufferHeight; ++y)
+		//for (u32 y = minMaxPoints[3]; y < minMaxPoints[2]; ++y)
 	{
-		for (u32 x = minMaxPoints[0]; x < minMaxPoints[1]; ++x)
+		for (u32 x = 0; x < globalState.frameBufferWidth; ++x)
+			//for (u32 x = minMaxPoints[0]; x < minMaxPoints[1]; ++x)
 		{
 			V2 pixelPoint = v2(x, y) + v2(0.5f, 0.5f);
 
@@ -60,9 +68,13 @@ void drawTriangle(V3 *points, u32 color)
 			V2 centerPixelVect1 = pixelPoint - pointB;
 			V2 centerPixelVect2 = pixelPoint - pointC;
 
-			if (vectorProduct(centerPixelVect0, triangleEdge0) >= 0.0f &&
-				vectorProduct(centerPixelVect1, triangleEdge1) >= 0.0f &&
-				vectorProduct(centerPixelVect2, triangleEdge2) >= 0.0f)
+			f32 crossLength0 = vectorProduct(centerPixelVect0, triangleEdge0);
+			f32 crossLength1 = vectorProduct(centerPixelVect1, triangleEdge1);
+			f32 crossLength2 = vectorProduct(centerPixelVect2, triangleEdge2);
+
+			if ((crossLength0 > 0.0f || (isTopLeft0 && crossLength0 == 0.0f)) &&
+				(crossLength1 > 0.0f || (isTopLeft1 && crossLength1 == 0.0f)) &&
+				(crossLength2 > 0.0f || (isTopLeft2 && crossLength2 == 0.0f)))
 			{
 				u32 pixelID = y * globalState.frameBufferWidth + x;
 				globalState.frameBufferPixels[pixelID] = color;
@@ -123,8 +135,8 @@ int WinMain(
 			WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
-			1366,
-			768,
+			1280,
+			720,
 			NULL,
 			NULL,
 			hInstance,
@@ -142,6 +154,9 @@ int WinMain(
 		GetClientRect(globalState.windowHandle, &clientRect);
 		globalState.frameBufferWidth = clientRect.right - clientRect.left;
 		globalState.frameBufferHeight = clientRect.bottom - clientRect.top;
+
+		globalState.frameBufferWidth = 50;
+		globalState.frameBufferHeight = 50;
 
 		globalState.frameBufferPixels.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
 	}
@@ -192,7 +207,7 @@ int WinMain(
 		globalState.currentAngle += frameTime;
 		if (globalState.currentAngle >= 2.0f * Pi32)
 			globalState.currentAngle = 0.0f;
-		
+
 		u32 colors[] =
 		{
 			0xFFFF00FF,
@@ -202,6 +217,24 @@ int WinMain(
 			0xFFFFFFFF,
 		};
 
+		V3 points1[3] =
+		{
+			v3(-1.0f, -1.0f, 1.0f),
+			v3(-1.0f, 1.0f, 1.0f),
+			v3(1.0f, 1.0f, 1.0f),
+		};
+
+		V3 points2[3] =
+		{
+			v3(-1.0f, -1.0f, 1.0f),
+			v3(1.0f, 1.0f, 1.0f),
+			v3(1.0f, -1.0f, 1.0f),
+		};
+
+		drawTriangle(points2, colors[2]);
+		drawTriangle(points1, colors[0]);
+
+#if 0
 		for (int triangleID = 10; triangleID >= 0; --triangleID)
 		{
 			f32 depth = std::powf(2.0f, triangleID + 1.0f);
@@ -220,7 +253,7 @@ int WinMain(
 
 			drawTriangle(points, colors[triangleID % ArrayCount(colors)]);
 		}
-
+#endif
 		RECT clientRect{};
 		GetClientRect(globalState.windowHandle, &clientRect);
 		u32 clientWidth = clientRect.right - clientRect.left;
