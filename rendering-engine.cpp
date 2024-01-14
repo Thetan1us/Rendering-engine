@@ -5,7 +5,7 @@
 
 static GlobalState globalState;
 
-V2 projectPoint(V3 pos)
+V2 projectPoint(const V3 &pos)
 {
 	// NDC
 	V2 result{};
@@ -16,7 +16,7 @@ V2 projectPoint(V3 pos)
 	return result;
 }
 
-f32 vectorProduct(V2 a, V2 b)
+f32 vectorProduct(const V2 &a, const V2 &b)
 {
 	f32 result = a.m_x * b.m_y - a.m_y * b.m_x;
 	return result;
@@ -40,7 +40,7 @@ f32 vectorProduct(V2 a, V2 b)
 //	return result;
 //}
 
-void drawTriangle(V3 *points, u32 color)
+void drawTriangle(V3 *points, const V3 *colors)
 {
 	V2 pointA = projectPoint(points[0]);
 	V2 pointB = projectPoint(points[1]);
@@ -56,6 +56,8 @@ void drawTriangle(V3 *points, u32 color)
 
 	//std::vector<u32> minMaxPoints = findMinMaxPoints(pointA, pointB, pointC);
 
+	f32 barycentricDiv = vectorProduct(pointB - pointA, pointC - pointA);
+
 	for (u32 y = 0; y < globalState.frameBufferHeight; ++y)
 		//for (u32 y = minMaxPoints[3]; y < minMaxPoints[2]; ++y)
 	{
@@ -68,16 +70,24 @@ void drawTriangle(V3 *points, u32 color)
 			V2 centerPixelVect1 = pixelPoint - pointB;
 			V2 centerPixelVect2 = pixelPoint - pointC;
 
-			f32 crossLength0 = vectorProduct(centerPixelVect0, triangleEdge0);
-			f32 crossLength1 = vectorProduct(centerPixelVect1, triangleEdge1);
-			f32 crossLength2 = vectorProduct(centerPixelVect2, triangleEdge2);
+			f32 vectorLength0 = vectorProduct(centerPixelVect0, triangleEdge0);
+			f32 vectorLength1 = vectorProduct(centerPixelVect1, triangleEdge1);
+			f32 vectorLength2 = vectorProduct(centerPixelVect2, triangleEdge2);
 
-			if ((crossLength0 > 0.0f || (isTopLeft0 && crossLength0 == 0.0f)) &&
-				(crossLength1 > 0.0f || (isTopLeft1 && crossLength1 == 0.0f)) &&
-				(crossLength2 > 0.0f || (isTopLeft2 && crossLength2 == 0.0f)))
+			if ((vectorLength0 > 0.0f || (isTopLeft0 && vectorLength0 == 0.0f)) &&
+				(vectorLength1 > 0.0f || (isTopLeft1 && vectorLength1 == 0.0f)) &&
+				(vectorLength2 > 0.0f || (isTopLeft2 && vectorLength2 == 0.0f)))
 			{
 				u32 pixelID = y * globalState.frameBufferWidth + x;
-				globalState.frameBufferPixels[pixelID] = color;
+
+				f32 t0 = -vectorLength1 / barycentricDiv;
+				f32 t1 = -vectorLength2 / barycentricDiv;
+				f32 t2 = -vectorLength0 / barycentricDiv;
+				V3 finalColor = t0 * colors[0] + t1 * colors[1] + t2 * colors[2];
+				finalColor = finalColor * 255.0f;
+				u32 finalColorU32 = (u32)0xFF << 24 | (u32)finalColor.m_red << 16 | (u32)finalColor.m_green << 8 | (u32)finalColor.m_blue;
+
+				globalState.frameBufferPixels[pixelID] = finalColorU32;
 			}
 		}
 	}
@@ -155,8 +165,8 @@ int WinMain(
 		globalState.frameBufferWidth = clientRect.right - clientRect.left;
 		globalState.frameBufferHeight = clientRect.bottom - clientRect.top;
 
-		globalState.frameBufferWidth = 50;
-		globalState.frameBufferHeight = 50;
+		globalState.frameBufferWidth = 300;
+		globalState.frameBufferHeight = 300;
 
 		globalState.frameBufferPixels.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
 	}
@@ -208,33 +218,13 @@ int WinMain(
 		if (globalState.currentAngle >= 2.0f * Pi32)
 			globalState.currentAngle = 0.0f;
 
-		u32 colors[] =
+		V3 colors[] =
 		{
-			0xFFFF00FF,
-			0xFFFF0000,
-			0xFF00FF00,
-			0xFF0000FF,
-			0xFFFFFFFF,
+			V3{1,0,0},
+			V3{0,1,0},
+			V3{0,0,1},
 		};
 
-		V3 points1[3] =
-		{
-			v3(-1.0f, -1.0f, 1.0f),
-			v3(-1.0f, 1.0f, 1.0f),
-			v3(1.0f, 1.0f, 1.0f),
-		};
-
-		V3 points2[3] =
-		{
-			v3(-1.0f, -1.0f, 1.0f),
-			v3(1.0f, 1.0f, 1.0f),
-			v3(1.0f, -1.0f, 1.0f),
-		};
-
-		drawTriangle(points2, colors[2]);
-		drawTriangle(points1, colors[0]);
-
-#if 0
 		for (int triangleID = 10; triangleID >= 0; --triangleID)
 		{
 			f32 depth = std::powf(2.0f, triangleID + 1.0f);
@@ -251,9 +241,9 @@ int WinMain(
 				points[pointID] = transformedPoint;
 			}
 
-			drawTriangle(points, colors[triangleID % ArrayCount(colors)]);
+			drawTriangle(points, colors);
 		}
-#endif
+
 		RECT clientRect{};
 		GetClientRect(globalState.windowHandle, &clientRect);
 		u32 clientWidth = clientRect.right - clientRect.left;

@@ -26,7 +26,7 @@ V2 v2(u32 x, u32 y)
 	return result;
 }
 
-V2 operator+(V2 a, V2 b)
+V2 operator+(const V2 &a, const V2 &b)
 {
 	V2 result;
 	result.m_x = a.m_x + b.m_x;
@@ -34,7 +34,7 @@ V2 operator+(V2 a, V2 b)
 	return result;
 }
 
-V2 operator-(V2 a, V2 b)
+V2 operator-(const V2 &a, const V2 &b)
 {
 	V2 result;
 	result.m_x = a.m_x - b.m_x;
@@ -42,7 +42,7 @@ V2 operator-(V2 a, V2 b)
 	return result;
 }
 
-V2 operator*(f32 a, V2 b)
+V2 operator*(f32 a, const V2 &b)
 {
 	V2 result;
 	result.m_x = a * b.m_x;
@@ -50,7 +50,7 @@ V2 operator*(f32 a, V2 b)
 	return result;
 }
 
-V2 operator*(V2 a, V2 b)
+V2 operator*(const V2 &a, const V2 &b)
 {
 	V2 result;
 	result.m_x = a.m_x * b.m_x;
@@ -58,7 +58,7 @@ V2 operator*(V2 a, V2 b)
 	return result;
 }
 
-V2 operator/(V2 a, f32 b)
+V2 operator/(const V2 &a, f32 b)
 {
 	V2 result;
 	result.m_x = a.m_x / b;
@@ -75,11 +75,29 @@ V3 v3(f32 x, f32 y, f32 z)
 	return result;
 }
 
-V3 operator+(V3 a, V3 b)
+V3 operator+(const V3 &a, const V3 &b)
 {
 	V3 result;
 	result.m_x = a.m_x + b.m_x;
 	result.m_y = a.m_y + b.m_y;
 	result.m_z = a.m_z + b.m_z;
+	return result;
+}
+
+V3 operator*(const V3 &a, f32 b)
+{
+	V3 result;
+	result.m_x = a.m_x * b;
+	result.m_y = a.m_y * b;
+	result.m_z = a.m_z * b;
+	return result;
+}
+
+V3 operator*(f32 a, const V3 &b)
+{
+	V3 result;
+	result.m_x = b.m_x * a;
+	result.m_y = b.m_y * a;
+	result.m_z = b.m_z * a;
 	return result;
 }

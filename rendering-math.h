@@ -21,6 +21,11 @@ union V3
 
 	struct
 	{
+		f32 m_red, m_green, m_blue;
+	};
+
+	struct
+	{
 		V2 m_xy;
 		f32 m_ignored;
 	};
@@ -31,10 +36,12 @@ union V3
 V2 v2(f32 arg);
 V2 v2(f32 x, f32 y);
 V2 v2(u32 x, u32 y);
-V2 operator+(V2 a, V2 b);
-V2 operator-(V2 a, V2 b);
-V2 operator*(f32 a, V2 b);
-V2 operator*(V2 a, V2 b);
-V2 operator/(V2 a, f32 b);
+V2 operator+(const V2 &a, const V2 &b);
+V2 operator-(const V2 &a, const V2 &b);
+V2 operator*(f32 a, const V2 &b);
+V2 operator*(const V2 &a, const V2 &b);
+V2 operator/(const V2 &a, f32 b);
 V3 v3(f32 x, f32 y, f32 z);
-V3 operator+(V3 a, V3 b);
+V3 operator+(const V3 &a, const V3 &b);
+V3 operator*(const V3 &a, f32 b);
+V3 operator*(f32 a, const V3 &b);
