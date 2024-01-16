@@ -18,6 +18,14 @@ V2 v2(f32 x, f32 y)
 	return result;
 }
 
+V2 v2(i32 x, i32 y)
+{
+	V2 result;
+	result.m_x = x;
+	result.m_y = y;
+	return result;
+}
+
 V2 v2(u32 x, u32 y)
 {
 	V2 result;

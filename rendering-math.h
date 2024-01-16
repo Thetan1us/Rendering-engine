@@ -35,6 +35,7 @@ union V3
 
 V2 v2(f32 arg);
 V2 v2(f32 x, f32 y);
+V2 v2(i32 x, i32 y);
 V2 v2(u32 x, u32 y);
 V2 operator+(const V2 &a, const V2 &b);
 V2 operator-(const V2 &a, const V2 &b);

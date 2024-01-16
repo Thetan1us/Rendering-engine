@@ -11,7 +11,7 @@ V2 projectPoint(const V3 &pos)
 	V2 result{};
 	result = pos.m_xy / pos.m_z;
 	// Pixels
-	result = 0.5f * (result + v2(1.0f));
+	result = 0.5f * (result + v2(1.0f, 1.0f));
 	result = result * v2(globalState.frameBufferWidth, globalState.frameBufferHeight);
 	return result;
 }
@@ -22,29 +22,26 @@ f32 vectorProduct(const V2 &a, const V2 &b)
 	return result;
 }
 
-//For optimization
-
-//std::vector<u32> findMinMaxPoints(const V2 &pointA, const V2 &pointB, const V2 &pointC)
-//{
-//	std::vector<u32> result{};
-//	u32 edgePointLeft = (std::fmin)((u32)pointA.m_x, (std::fmin)((u32)pointB.m_x, (u32)pointC.m_x));
-//	u32 edgePointRight = (std::fmax)((u32)pointA.m_x, (std::fmax)((u32)pointB.m_x, (u32)pointC.m_x));
-//	u32 edgePointBottom = (std::fmin)((u32)pointA.m_y, (std::fmin)((u32)pointB.m_y, (u32)pointC.m_y));
-//	u32 edgePointTop = (std::fmax)((u32)pointA.m_y, (std::fmax)((u32)pointB.m_y, (u32)pointC.m_y));
-//
-//	result.push_back(edgePointLeft);
-//	result.push_back(edgePointRight);
-//	result.push_back(edgePointBottom);
-//	result.push_back(edgePointTop);
-//
-//	return result;
-//}
-
-void drawTriangle(V3 *points, const V3 *colors)
+void drawTriangle(V3 *points, V3 *colors)
 {
 	V2 pointA = projectPoint(points[0]);
 	V2 pointB = projectPoint(points[1]);
 	V2 pointC = projectPoint(points[2]);
+
+	i32 edgePointLeft = min((i32)pointA.m_x, min((i32)pointB.m_x, (i32)pointC.m_x));
+	i32 edgePointRight = max((i32)ceil(pointA.m_x), max((i32)ceil(pointB.m_x), (i32)ceil(pointC.m_x)));
+	i32 edgePointBottom = min((i32)pointA.m_y, min((i32)pointB.m_y, (i32)pointC.m_y));
+	i32 edgePointTop = max((i32)ceil(pointA.m_y), max((i32)ceil(pointB.m_y), (i32)ceil(pointC.m_y)));
+
+	edgePointLeft = max(0, edgePointLeft);
+	edgePointLeft = min(globalState.frameBufferWidth - 1, edgePointLeft);
+	edgePointRight = max(0, edgePointRight);
+	edgePointRight = min(globalState.frameBufferWidth - 1, edgePointRight);
+	edgePointTop = max(0, edgePointTop);
+	edgePointTop = min(globalState.frameBufferHeight - 1, edgePointTop);
+	edgePointBottom = max(0, edgePointBottom);
+	edgePointBottom = min(globalState.frameBufferHeight - 1, edgePointBottom);
+
 
 	V2 triangleEdge0 = pointB - pointA;
 	V2 triangleEdge1 = pointC - pointB;
@@ -54,15 +51,11 @@ void drawTriangle(V3 *points, const V3 *colors)
 	bool isTopLeft1 = (triangleEdge1.m_x >= 0.0f && triangleEdge1.m_y > 0.0f) || (triangleEdge1.m_x > 0 && triangleEdge1.m_y == 0.0f);
 	bool isTopLeft2 = (triangleEdge2.m_x >= 0.0f && triangleEdge2.m_y > 0.0f) || (triangleEdge2.m_x > 0 && triangleEdge2.m_y == 0.0f);
 
-	//std::vector<u32> minMaxPoints = findMinMaxPoints(pointA, pointB, pointC);
-
 	f32 barycentricDiv = vectorProduct(pointB - pointA, pointC - pointA);
 
-	for (u32 y = 0; y < globalState.frameBufferHeight; ++y)
-		//for (u32 y = minMaxPoints[3]; y < minMaxPoints[2]; ++y)
+	for (i32 y = edgePointTop; y >= edgePointBottom; --y)
 	{
-		for (u32 x = 0; x < globalState.frameBufferWidth; ++x)
-			//for (u32 x = minMaxPoints[0]; x < minMaxPoints[1]; ++x)
+		for (i32 x = edgePointLeft; x <= edgePointRight; ++x)
 		{
 			V2 pixelPoint = v2(x, y) + v2(0.5f, 0.5f);
 
@@ -164,10 +157,6 @@ int WinMain(
 		GetClientRect(globalState.windowHandle, &clientRect);
 		globalState.frameBufferWidth = clientRect.right - clientRect.left;
 		globalState.frameBufferHeight = clientRect.bottom - clientRect.top;
-
-		globalState.frameBufferWidth = 300;
-		globalState.frameBufferHeight = 300;
-
 		globalState.frameBufferPixels.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
 	}
 
@@ -225,12 +214,12 @@ int WinMain(
 			V3{0,0,1},
 		};
 
-		for (int triangleID = 10; triangleID >= 0; --triangleID)
+		for (int triangleID = 5; triangleID >= 0; --triangleID)
 		{
 			f32 depth = std::powf(2.0f, triangleID + 1.0f);
 			V3 points[3] =
 			{
-				V3{ -0.9f, -0.5f, depth },
+				V3{ -10.0f, -0.5f, depth },
 				V3{ 0.0f, 0.5f, depth },
 				V3{ 1.0f, -0.5f, depth }
 			};

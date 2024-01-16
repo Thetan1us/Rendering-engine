@@ -5,6 +5,7 @@
 #include <cfloat>
 #include <iostream>
 #include <vector>
+#include <array>
 
 #include <Windows.h>
 
