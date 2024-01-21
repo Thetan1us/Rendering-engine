@@ -40,6 +40,7 @@ struct GlobalState
 	u32 frameBufferWidth;
 	u32 frameBufferHeight;
 	std::vector<u32> frameBufferPixels;
+	std::vector<f32> depthBuffer;
 
 	f32 currentAngle;
 };

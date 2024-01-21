@@ -42,7 +42,6 @@ void drawTriangle(V3 *points, V3 *colors)
 	edgePointBottom = max(0, edgePointBottom);
 	edgePointBottom = min(globalState.frameBufferHeight - 1, edgePointBottom);
 
-
 	V2 triangleEdge0 = pointB - pointA;
 	V2 triangleEdge1 = pointC - pointB;
 	V2 triangleEdge2 = pointA - pointC;
@@ -76,11 +75,19 @@ void drawTriangle(V3 *points, V3 *colors)
 				f32 t0 = -vectorLength1 / barycentricDiv;
 				f32 t1 = -vectorLength2 / barycentricDiv;
 				f32 t2 = -vectorLength0 / barycentricDiv;
-				V3 finalColor = t0 * colors[0] + t1 * colors[1] + t2 * colors[2];
-				finalColor = finalColor * 255.0f;
-				u32 finalColorU32 = (u32)0xFF << 24 | (u32)finalColor.m_red << 16 | (u32)finalColor.m_green << 8 | (u32)finalColor.m_blue;
 
-				globalState.frameBufferPixels[pixelID] = finalColorU32;
+				f32 depth = t0 * (1.0f / points[0].m_z) + t1 * (1.0f / points[1].m_z) + t2 * (1.0f / points[2].m_z);
+				depth = 1.0f / depth;
+				if (depth < globalState.depthBuffer[pixelID])
+				{
+					V3 finalColor = t0 * colors[0] + t1 * colors[1] + t2 * colors[2];
+					finalColor = finalColor * 255.0f;
+					u32 finalColorU32 = (u32)0xFF << 24 | (u32)finalColor.m_red << 16 | (u32)finalColor.m_green << 8 | (u32)finalColor.m_blue;
+
+					globalState.frameBufferPixels[pixelID] = finalColorU32;
+					globalState.depthBuffer[pixelID] = depth;
+				}
+
 			}
 		}
 	}
@@ -158,6 +165,7 @@ int WinMain(
 		globalState.frameBufferWidth = clientRect.right - clientRect.left;
 		globalState.frameBufferHeight = clientRect.bottom - clientRect.top;
 		globalState.frameBufferPixels.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
+		globalState.depthBuffer.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
 	}
 
 	LARGE_INTEGER startTime{};
@@ -199,6 +207,7 @@ int WinMain(
 				u8 blue = (u8)0;
 				u32 pixelColor = (u32)alpha << 24 | (u32)red << 16 | (u32)green << 8 | (u32)blue;
 
+				globalState.depthBuffer[pixelID] = FLT_MAX;
 				globalState.frameBufferPixels[pixelID] = pixelColor;
 			}
 		}
@@ -207,21 +216,53 @@ int WinMain(
 		if (globalState.currentAngle >= 2.0f * Pi32)
 			globalState.currentAngle = 0.0f;
 
-		V3 colors[] =
+		V3 positions1[] =
 		{
-			V3{1,0,0},
-			V3{0,1,0},
-			V3{0,0,1},
+			v3(0.0f, 0.5f, 1.0f),
+			v3(0.5f, -0.5f, 1.0f),
+			v3(-0.5f, -0.5f, 1.0f),
 		};
 
-		for (int triangleID = 5; triangleID >= 0; --triangleID)
+		V3 colors1[] =
+		{
+			v3(1,0,0),
+			v3(0,1,0),
+			v3(0,0,1)
+		};
+		
+		V3 positions2[] =
+		{
+			v3(0.0f, 0.5f, 1.0f),
+			v3(0.5f, -0.5f, 1.2f),
+			v3(-0.5f, -0.5f, 0.8f),
+		};
+
+		V3 colors2[] =
+		{
+			v3(1,0,1),
+			v3(1,1,0),
+			v3(0,1,1),
+		};
+
+		V3 positions3[] =
+		{
+			v3(0.0f, -0.5f, 0.6f),
+			v3(-1.5f, 0.5f, 3.0f),
+			v3(1.5f, 0.5f, 3.0f),
+		};
+
+		drawTriangle(positions1, colors1);
+		drawTriangle(positions2, colors2);
+		drawTriangle(positions3, colors2);
+
+		/*for (int triangleID = 5; triangleID >= 0; --triangleID)
 		{
 			f32 depth = std::powf(2.0f, triangleID + 1.0f);
 			V3 points[3] =
 			{
-				V3{ -10.0f, -0.5f, depth },
-				V3{ 0.0f, 0.5f, depth },
-				V3{ 1.0f, -0.5f, depth }
+				v3( -1.0f, -0.5f, depth ),
+				v3( 0.0f, 0.5f, depth ),
+				v3( 1.0f, -0.5f, depth )
 			};
 
 			for (int pointID = 0; pointID < ArrayCount(points); ++pointID)
@@ -231,7 +272,7 @@ int WinMain(
 			}
 
 			drawTriangle(points, colors);
-		}
+		}*/
 
 		RECT clientRect{};
 		GetClientRect(globalState.windowHandle, &clientRect);
