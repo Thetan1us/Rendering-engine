@@ -24,7 +24,6 @@ typedef double f64;
 
 #define Assert(Expression) if (!(Expression)) { DebugBreak(); }
 #define InvalidCodePath Assert(!"Invalid Code Path")
-#define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0]))
 
 #define KiloBytes(Val) ((Val) * 1024LL)
 #define MegaBytes(Val) (KiloBytes(Val) * 1024LL)
@@ -42,5 +41,5 @@ struct GlobalState
 	std::vector<u32> frameBufferPixels;
 	std::vector<f32> depthBuffer;
 
-	f32 currentAngle;
+	f32 currentTime;
 };

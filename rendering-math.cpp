@@ -110,6 +110,14 @@ V3 operator*(f32 a, const V3 &b)
 	return result;
 }
 
+V4 v4(const V3 &a, f32 w)
+{
+	V4 result{};
+	result.m_xyz = a;
+	result.m_alpha = w;
+	return result;
+}
+
 V4 operator+(const V4 &a, const V4 &b)
 {
 	V4 result{};
@@ -136,7 +144,7 @@ V4 operator*(const M4 &a, const V4 &b)
 	return result;
 }
 
-M4 createM4()
+M4 identityM4()
 {
 	M4 result{};
 	result.m_v[0].m_x = 1.0f;
@@ -158,7 +166,7 @@ M4 operator*(const M4 &a, const M4 &b)
 
 M4 scaleMatrix(f32 x, f32 y, f32 z)
 {
-	M4 result = createM4();
+	M4 result = identityM4();
 	result.m_v[0].m_x = x;
 	result.m_v[1].m_y = y;
 	result.m_v[2].m_z = z;
@@ -167,7 +175,7 @@ M4 scaleMatrix(f32 x, f32 y, f32 z)
 
 M4 translationMatrix(f32 x, f32 y, f32 z)
 {
-	M4 result = createM4();
+	M4 result = identityM4();
 	result.m_v[3].m_xyz = v3(x, y, z);
 	return result;
 }
@@ -176,25 +184,25 @@ M4 rotationMatrix(f32 x, f32 y, f32 z)
 {
 	M4 result{};
 
-	M4 rotateX = createM4();
+	M4 rotateX = identityM4();
 	rotateX.m_v[1].m_y = cos(x);
-	rotateX.m_v[2].m_z = -sin(x);
+	rotateX.m_v[2].m_y = -sin(x);
 	rotateX.m_v[1].m_z = sin(x);
 	rotateX.m_v[2].m_z = cos(x);
 
-	M4 rotateY = createM4();
+	M4 rotateY = identityM4();
 	rotateY.m_v[0].m_x = cos(y);
-	rotateY.m_v[2].m_z = -sin(y);
+	rotateY.m_v[2].m_x = -sin(y);
 	rotateY.m_v[0].m_z = sin(y);
 	rotateY.m_v[2].m_z = cos(y);
 
-	M4 rotateZ = createM4();
+	M4 rotateZ = identityM4();
 	rotateZ.m_v[0].m_x = cos(z);
-	rotateZ.m_v[1].m_z = -sin(z);
-	rotateZ.m_v[0].m_x = sin(z);
+	rotateZ.m_v[1].m_x = -sin(z);
+	rotateZ.m_v[0].m_y = sin(z);
 	rotateZ.m_v[1].m_y = cos(z);
 
-	result = rotateZ * rotateY * rotateX;
+	result = rotateX * rotateY * rotateZ;
 
 	return result;
 }

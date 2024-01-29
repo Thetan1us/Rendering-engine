@@ -22,11 +22,17 @@ f32 vectorProduct(const V2 &a, const V2 &b)
 	return result;
 }
 
-void drawTriangle(V3 *points, V3 *colors)
+void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &modelVertex2,
+	              const V3 &modelColor0, const V3 &modelColor1, const V3 &modelColor2,
+	              const M4 &transform)
 {
-	V2 pointA = projectPoint(points[0]);
-	V2 pointB = projectPoint(points[1]);
-	V2 pointC = projectPoint(points[2]);
+	V3 transformedPoint0 = (transform * v4(modelVertex0, 1.0f)).m_xyz;
+	V3 transformedPoint1 = (transform * v4(modelVertex1, 1.0f)).m_xyz;
+	V3 transformedPoint2 = (transform * v4(modelVertex2, 1.0f)).m_xyz;
+
+	V2 pointA = projectPoint(transformedPoint0);
+	V2 pointB = projectPoint(transformedPoint1);
+	V2 pointC = projectPoint(transformedPoint2);
 
 	i32 edgePointLeft = min((i32)pointA.m_x, min((i32)pointB.m_x, (i32)pointC.m_x));
 	i32 edgePointRight = max((i32)ceil(pointA.m_x), max((i32)ceil(pointB.m_x), (i32)ceil(pointC.m_x)));
@@ -76,11 +82,11 @@ void drawTriangle(V3 *points, V3 *colors)
 				f32 t1 = -vectorLength2 / barycentricDiv;
 				f32 t2 = -vectorLength0 / barycentricDiv;
 
-				f32 depth = t0 * (1.0f / points[0].m_z) + t1 * (1.0f / points[1].m_z) + t2 * (1.0f / points[2].m_z);
+				f32 depth = t0 * (1.0f / transformedPoint0.m_z) + t1 * (1.0f / transformedPoint1.m_z) + t2 * (1.0f / transformedPoint2.m_z);
 				depth = 1.0f / depth;
 				if (depth < globalState.depthBuffer[pixelID])
 				{
-					V3 finalColor = t0 * colors[0] + t1 * colors[1] + t2 * colors[2];
+					V3 finalColor = t0 * modelColor0 + t1 * modelColor1 + t2 * modelColor2;
 					finalColor = finalColor * 255.0f;
 					u32 finalColorU32 = (u32)0xFF << 24 | (u32)finalColor.m_red << 16 | (u32)finalColor.m_green << 8 | (u32)finalColor.m_blue;
 
@@ -164,6 +170,10 @@ int WinMain(
 		GetClientRect(globalState.windowHandle, &clientRect);
 		globalState.frameBufferWidth = clientRect.right - clientRect.left;
 		globalState.frameBufferHeight = clientRect.bottom - clientRect.top;
+
+		globalState.frameBufferWidth = 480;
+		globalState.frameBufferHeight = 320;
+
 		globalState.frameBufferPixels.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
 		globalState.depthBuffer.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
 	}
@@ -212,15 +222,15 @@ int WinMain(
 			}
 		}
 
-		globalState.currentAngle += frameTime;
-		if (globalState.currentAngle >= 2.0f * Pi32)
-			globalState.currentAngle = 0.0f;
+		globalState.currentTime += frameTime;
+		if (globalState.currentTime >= 2.0f * Pi32)
+			globalState.currentTime = 0.0f;
 
-		V3 positions1[] =
+		/*V3 positions1[] =
 		{
-			v3(0.0f, 0.5f, 1.0f),
-			v3(0.5f, -0.5f, 1.0f),
-			v3(-0.5f, -0.5f, 1.0f),
+			v3(0.0f, 0.5f, 0.0f),
+			v3(0.5f, -0.5f, 0.0f),
+			v3(-0.5f, -0.5f, 0.0f),
 		};
 
 		V3 colors1[] =
@@ -228,51 +238,71 @@ int WinMain(
 			v3(1,0,0),
 			v3(0,1,0),
 			v3(0,0,1)
-		};
+		};*/
 		
-		V3 positions2[] =
+		V3 cubeVertices[] =
 		{
-			v3(0.0f, 0.5f, 1.0f),
-			v3(0.5f, -0.5f, 1.2f),
-			v3(-0.5f, -0.5f, 0.8f),
+			v3(-0.5f, -0.5f, -0.5f),
+			v3(-0.5f, 0.5f, -0.5f),
+			v3(0.5f, 0.5f, -0.5f),
+			v3(0.5f, -0.5f, -0.5f),
+		
+
+			v3(-0.5f, -0.5f, 0.5f),
+			v3(-0.5f, 0.5f, 0.5f),
+			v3(0.5f, 0.5f, 0.5f),
+			v3(0.5f, -0.5f, 0.5f),
 		};
 
-		V3 colors2[] =
+		V3 cubeColors[] =
 		{
+			v3(1,0,0),
+			v3(0,1,0),
+			v3(0,0,1),
 			v3(1,0,1),
+
 			v3(1,1,0),
 			v3(0,1,1),
+			v3(1,0,1),
+			v3(1,1,1),
+
 		};
 
-		V3 positions3[] =
+		u32 modelIndexes[] =
 		{
-			v3(0.0f, -0.5f, 0.6f),
-			v3(-1.5f, 0.5f, 3.0f),
-			v3(1.5f, 0.5f, 3.0f),
+			// Front
+			0, 1, 2,
+			2, 3, 0,
+			// Back
+			6, 5, 4,
+			4, 7, 6,
+			// Left
+			4, 5, 1,
+			1, 0, 4,
+			//Right
+			3, 2, 6,
+			6, 7, 3,
+			//Top
+			1, 5, 6,
+			6, 2, 1,
+			//Bottom
+			4, 0, 3,
+			3, 7, 4,
 		};
 
-		drawTriangle(positions1, colors1);
-		drawTriangle(positions2, colors2);
-		drawTriangle(positions3, colors2);
-
-		/*for (int triangleID = 5; triangleID >= 0; --triangleID)
+		M4 transform = scaleMatrix(3, 3, 3) *
+			           rotationMatrix(globalState.currentTime, globalState.currentTime, globalState.currentTime) *
+			           translationMatrix(0, 0, 3);
+		for (u32 indexID = 0; indexID < std::size(modelIndexes); indexID += 3)
 		{
-			f32 depth = std::powf(2.0f, triangleID + 1.0f);
-			V3 points[3] =
-			{
-				v3( -1.0f, -0.5f, depth ),
-				v3( 0.0f, 0.5f, depth ),
-				v3( 1.0f, -0.5f, depth )
-			};
+			u32 index0 = modelIndexes[indexID];
+			u32 index1 = modelIndexes[indexID + 1];
+			u32 index2 = modelIndexes[indexID + 2];
 
-			for (int pointID = 0; pointID < ArrayCount(points); ++pointID)
-			{
-				V3 transformedPoint = points[pointID] + v3(cos(globalState.currentAngle), sin(globalState.currentAngle), 0);
-				points[pointID] = transformedPoint;
-			}
-
-			drawTriangle(points, colors);
-		}*/
+			drawTriangle(cubeVertices[index0], cubeVertices[index1], cubeVertices[index2],
+				cubeColors[index0], cubeColors[index1], cubeColors[index2],
+				transform);
+		}
 
 		RECT clientRect{};
 		GetClientRect(globalState.windowHandle, &clientRect);
