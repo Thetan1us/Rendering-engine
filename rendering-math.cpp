@@ -124,6 +124,7 @@ V4 operator+(const V4 &a, const V4 &b)
 	result.m_x = a.m_x + b.m_x;
 	result.m_y = a.m_y + b.m_y;
 	result.m_z = a.m_z + b.m_z;
+	result.m_w = a.m_w + b.m_w;
 
 	return result;
 }
@@ -134,6 +135,7 @@ V4 operator*(const V4 &a, f32 b)
 	result.m_x = a.m_x * b;
 	result.m_y = a.m_y * b;
 	result.m_z = a.m_z * b;
+	result.m_w = a.m_w * b;
 
 	return result;
 }
@@ -192,8 +194,8 @@ M4 rotationMatrix(f32 x, f32 y, f32 z)
 
 	M4 rotateY = identityM4();
 	rotateY.m_v[0].m_x = cos(y);
-	rotateY.m_v[2].m_x = -sin(y);
-	rotateY.m_v[0].m_z = sin(y);
+	rotateY.m_v[2].m_x = sin(y);
+	rotateY.m_v[0].m_z = -sin(y);
 	rotateY.m_v[2].m_z = cos(y);
 
 	M4 rotateZ = identityM4();
@@ -202,7 +204,7 @@ M4 rotationMatrix(f32 x, f32 y, f32 z)
 	rotateZ.m_v[0].m_y = sin(z);
 	rotateZ.m_v[1].m_y = cos(z);
 
-	result = rotateX * rotateY * rotateZ;
+	result = rotateZ * rotateY * rotateX;
 
 	return result;
 }

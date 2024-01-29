@@ -171,8 +171,8 @@ int WinMain(
 		globalState.frameBufferWidth = clientRect.right - clientRect.left;
 		globalState.frameBufferHeight = clientRect.bottom - clientRect.top;
 
-		globalState.frameBufferWidth = 480;
-		globalState.frameBufferHeight = 320;
+		//globalState.frameBufferWidth = 300;
+		//globalState.frameBufferHeight = 300;
 
 		globalState.frameBufferPixels.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
 		globalState.depthBuffer.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
@@ -290,12 +290,13 @@ int WinMain(
 			3, 7, 4,
 		};
 
-		M4 transform = scaleMatrix(3, 3, 3) *
+		M4 transform = translationMatrix(0, 0, 2) *
 			           rotationMatrix(globalState.currentTime, globalState.currentTime, globalState.currentTime) *
-			           translationMatrix(0, 0, 3);
+		               scaleMatrix(1, 1, 1);
+
 		for (u32 indexID = 0; indexID < std::size(modelIndexes); indexID += 3)
 		{
-			u32 index0 = modelIndexes[indexID];
+			u32 index0 = modelIndexes[indexID + 0];
 			u32 index1 = modelIndexes[indexID + 1];
 			u32 index2 = modelIndexes[indexID + 2];
 
