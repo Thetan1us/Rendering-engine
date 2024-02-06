@@ -18,7 +18,10 @@
     <ClCompile Include="rendering-engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rendering-math.cpp">
+    <ClCompile Include="vectors.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="matrices.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -26,7 +29,10 @@
     <ClInclude Include="rendering-engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rendering-math.h">
+    <ClInclude Include="vectors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="matrices.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

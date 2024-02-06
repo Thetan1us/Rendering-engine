@@ -129,14 +129,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="matrices.cpp" />
     <ClCompile Include="rendering-engine.cpp" />
-    <ClCompile Include="rendering-math.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="vectors.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="rendering-math.h" />
+    <ClInclude Include="matrices.h" />
     <ClInclude Include="rendering-engine.h" />
+    <ClInclude Include="vectors.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
