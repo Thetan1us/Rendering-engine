@@ -1,5 +1,7 @@
 #pragma once
 
+union M4;
+
 union V2
 {
 	struct
@@ -7,7 +9,7 @@ union V2
 		float m_x, m_y;
 	};
 
-	float m_e[2];
+	std::array<float, 2> m_e;
 };
 
 union V3
@@ -28,7 +30,7 @@ union V3
 		float m_ignored;
 	};
 
-	float m_e[3];
+	std::array<float, 3> m_e;
 };
 
 union V4
@@ -55,13 +57,13 @@ union V4
 		V2 m_ignored1;
 	};
 
-	float m_e[4];
+	std::array<float, 4> m_e;
 };
 
 V2 v2(float arg);
 V2 v2(float x, float y);
 V2 v2(int x, int y);
-V2 v2(unsigned int x, unsigned int y);
+V2 v2(uint32_t x, uint32_t y);
 V2 operator+(const V2 &a, const V2 &b);
 V2 operator-(const V2 &a, const V2 &b);
 V3 operator+=(V3 &a, const V3 &b);
@@ -77,4 +79,3 @@ V3 operator-(V3 &a);
 V4 v4(const V3 &a, float w);
 V4 operator+(const V4 &a, const V4 &b);
 V4 operator*(const V4 &a, float b);
-V4 operator*(const M4 &a, const V4 &b);

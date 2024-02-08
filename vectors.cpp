@@ -1,4 +1,12 @@
-#include "vectors.h"
+#include <array>
+
+#include "vectors.hpp"
+
+union M4
+{
+	std::array<V4, 4> m_v;
+	std::array<float, 16> m_e;
+};
 
 V2 v2(float arg)
 {
@@ -24,7 +32,7 @@ V2 v2(int x, int y)
 	return result;
 }
 
-V2 v2(unsigned int x, unsigned int y)
+V2 v2(uint32_t x, uint32_t y)
 {
 	V2 result;
 	result.m_x = (float)x;
@@ -169,8 +177,3 @@ V4 operator*(const V4 &a, float b)
 	return result;
 }
 
-V4 operator*(const M4 &a, const V4 &b)
-{
-	V4 result = a.m_v[0] * b.m_x + a.m_v[1] * b.m_y + a.m_v[2] * b.m_z + a.m_v[3] * b.m_w;
-	return result;
-}

@@ -22,9 +22,9 @@ struct GlobalState
 	HWND windowHandle;
 	bool isRunning;
 	HDC deviceContext;
-	unsigned int frameBufferWidth;
-	unsigned int frameBufferHeight;
-	std::vector<unsigned int> frameBufferPixels;
+	uint32_t frameBufferWidth;
+	uint32_t frameBufferHeight;
+	std::vector<uint32_t> frameBufferPixels;
 	std::vector<float> depthBuffer;
 
 	float currentTime;

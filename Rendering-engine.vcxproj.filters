@@ -26,13 +26,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="rendering-engine.h">
+    <ClInclude Include="rendering-engine.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vectors.h">
+    <ClInclude Include="vectors.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="matrices.h">
+    <ClInclude Include="matrices.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,12 +2,12 @@
 #include <array>
 #include <Windows.h>
 
-#include "matrices.h"
-#include "vectors.h"
-#include "rendering-engine.h"
+#include "matrices.hpp"
+#include "vectors.hpp"
+#include "rendering-engine.hpp"
 
-static GlobalState globalState;
-static float Pi = 3.14159f;
+static GlobalState g_globalState;
+static float g_Pi = 3.14159f;
 
 V2 projectPoint(const V3 &m_pos)
 {
@@ -16,7 +16,7 @@ V2 projectPoint(const V3 &m_pos)
 	result = m_pos.m_xy / m_pos.m_z;
 	// Pixels
 	result = 0.5f * (result + v2(1.0f, 1.0f));
-	result = result * v2(globalState.frameBufferWidth, globalState.frameBufferHeight);
+	result = result * v2(g_globalState.frameBufferWidth, g_globalState.frameBufferHeight);
 	return result;
 }
 
@@ -44,13 +44,13 @@ void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &mode
 	int edgePointTop = max((int)ceil(pointA.m_y), max((int)ceil(pointB.m_y), (int)ceil(pointC.m_y)));
 
 	edgePointLeft = max(0, edgePointLeft);
-	edgePointLeft = min(globalState.frameBufferWidth - 1, edgePointLeft);
+	edgePointLeft = min(g_globalState.frameBufferWidth - 1, edgePointLeft);
 	edgePointRight = max(0, edgePointRight);
-	edgePointRight = min(globalState.frameBufferWidth - 1, edgePointRight);
+	edgePointRight = min(g_globalState.frameBufferWidth - 1, edgePointRight);
 	edgePointTop = max(0, edgePointTop);
-	edgePointTop = min(globalState.frameBufferHeight - 1, edgePointTop);
+	edgePointTop = min(g_globalState.frameBufferHeight - 1, edgePointTop);
 	edgePointBottom = max(0, edgePointBottom);
-	edgePointBottom = min(globalState.frameBufferHeight - 1, edgePointBottom);
+	edgePointBottom = min(g_globalState.frameBufferHeight - 1, edgePointBottom);
 
 	V2 triangleEdge0 = pointB - pointA;
 	V2 triangleEdge1 = pointC - pointB;
@@ -80,7 +80,7 @@ void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &mode
 				(vectorLength1 > 0.0f || (isTopLeft1 && vectorLength1 == 0.0f)) &&
 				(vectorLength2 > 0.0f || (isTopLeft2 && vectorLength2 == 0.0f)))
 			{
-				unsigned int pixelID = y * globalState.frameBufferWidth + x;
+				uint32_t pixelID = y * g_globalState.frameBufferWidth + x;
 
 				float t0 = -vectorLength1 / barycentricDiv;
 				float t1 = -vectorLength2 / barycentricDiv;
@@ -88,20 +88,21 @@ void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &mode
 
 				float depth = t0 * (1.0f / transformedPoint0.m_z) + t1 * (1.0f / transformedPoint1.m_z) + t2 * (1.0f / transformedPoint2.m_z);
 				depth = 1.0f / depth;
-				if (depth < globalState.depthBuffer[pixelID])
+				if (depth < g_globalState.depthBuffer[pixelID])
 				{
 					V3 finalColor = t0 * modelColor0 + t1 * modelColor1 + t2 * modelColor2;
 					finalColor = finalColor * 255.0f;
-					unsigned int finalColor32 = (unsigned int)0xFF << 24 | (unsigned int)finalColor.m_red << 16 | (unsigned int)finalColor.m_green << 8 | (unsigned int)finalColor.m_blue;
+					uint32_t finalColor32 = (uint32_t)0xFF << 24 | (uint32_t)finalColor.m_red << 16 | (uint32_t)finalColor.m_green << 8 | (uint32_t)finalColor.m_blue;
 
-					globalState.frameBufferPixels[pixelID] = finalColor32;
-					globalState.depthBuffer[pixelID] = depth;
+					g_globalState.frameBufferPixels[pixelID] = finalColor32;
+					g_globalState.depthBuffer[pixelID] = depth;
 				}
 
 			}
 		}
 	}
 }
+
 LRESULT Win32WindowCallback(
 	HWND hWnd,
 	UINT uMsg,
@@ -116,7 +117,7 @@ LRESULT Win32WindowCallback(
 	case WM_CLOSE:
 	case WM_DESTROY:
 	{
-		globalState.isRunning = false;
+		g_globalState.isRunning = false;
 	} break;
 	default:
 	{
@@ -132,7 +133,7 @@ int WinMain(
 	LPSTR     lpCmdLine,
 	int       nShowCmd)
 {
-	globalState.isRunning = true;
+	g_globalState.isRunning = true;
 	LARGE_INTEGER timerFrequency{};
 	Assert(QueryPerformanceFrequency(&timerFrequency));
 
@@ -147,45 +148,45 @@ int WinMain(
 		if (!RegisterClassA(&windowClass))
 			InvalidCodePath;
 
-		globalState.windowHandle = CreateWindowExA(
+		g_globalState.windowHandle = CreateWindowExA(
 			0,
 			windowClass.lpszClassName,
 			"Rendering Engine",
 			WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
-			1280,
-			720,
+			740,
+			700,
 			NULL,
 			NULL,
 			hInstance,
 			NULL
 		);
 
-		if (!globalState.windowHandle)
+		if (!g_globalState.windowHandle)
 			InvalidCodePath;
 
-		globalState.deviceContext = GetDC(globalState.windowHandle);
+		g_globalState.deviceContext = GetDC(g_globalState.windowHandle);
 	}
 
 	{
 		RECT clientRect{};
-		GetClientRect(globalState.windowHandle, &clientRect);
-		globalState.frameBufferWidth = clientRect.right - clientRect.left;
-		globalState.frameBufferHeight = clientRect.bottom - clientRect.top;
+		GetClientRect(g_globalState.windowHandle, &clientRect);
+		g_globalState.frameBufferWidth = clientRect.right - clientRect.left;
+		g_globalState.frameBufferHeight = clientRect.bottom - clientRect.top;
 
-		globalState.frameBufferWidth = 500;
-		globalState.frameBufferHeight = 500;
+		g_globalState.frameBufferWidth = 500;
+		g_globalState.frameBufferHeight = 500;
 
-		globalState.frameBufferPixels.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
-		globalState.depthBuffer.resize(globalState.frameBufferHeight * globalState.frameBufferWidth);
+		g_globalState.frameBufferPixels.resize(g_globalState.frameBufferHeight * g_globalState.frameBufferWidth);
+		g_globalState.depthBuffer.resize(g_globalState.frameBufferHeight * g_globalState.frameBufferWidth);
 	}
 
 	LARGE_INTEGER startTime{};
 	LARGE_INTEGER endTime{};
 	Assert(QueryPerformanceCounter(&startTime));
 
-	while (globalState.isRunning)
+	while (g_globalState.isRunning)
 	{
 		Assert(QueryPerformanceCounter(&endTime));
 		float frameTime = float(endTime.QuadPart - startTime.QuadPart) / float(timerFrequency.QuadPart);
@@ -198,15 +199,15 @@ int WinMain(
 		bool qDown = false;
 		bool eDown = false;
 		MSG message{};
-		while (PeekMessageA(&message, globalState.windowHandle, 0, 0, PM_REMOVE))
+		while (PeekMessageA(&message, g_globalState.windowHandle, 0, 0, PM_REMOVE))
 		{
 			switch (message.message)
 			{
-			case WM_QUIT: globalState.isRunning = false; break;
+			case WM_QUIT: g_globalState.isRunning = false; break;
 			case WM_KEYUP:
 			case WM_KEYDOWN:
 			{
-				unsigned int keyCode = message.wParam;
+				uint32_t keyCode = message.wParam;
 				bool isDown = !(message.lParam >> 31);
 
 				switch (keyCode)
@@ -242,20 +243,20 @@ int WinMain(
 
 		// All pixels are set to 0
 
-		for (unsigned int y = 0; y < globalState.frameBufferHeight; ++y)
+		for (uint32_t y = 0; y < g_globalState.frameBufferHeight; ++y)
 		{
-			for (unsigned int x = 0; x < globalState.frameBufferWidth; ++x)
+			for (uint32_t x = 0; x < g_globalState.frameBufferWidth; ++x)
 			{
-				unsigned int pixelID = y * globalState.frameBufferWidth + x;
+				uint32_t pixelID = y * g_globalState.frameBufferWidth + x;
 
 				unsigned __int8 alpha = 255;
 				unsigned __int8 red = (unsigned __int8)0;
 				unsigned __int8 green = (unsigned __int8)0;
 				unsigned __int8 blue = (unsigned __int8)0;
-				unsigned int pixelColor = (unsigned int)alpha << 24 | (unsigned int)red << 16 | (unsigned int)green << 8 | (unsigned int)blue;
+				uint32_t pixelColor = (uint32_t)alpha << 24 | (uint32_t)red << 16 | (uint32_t)green << 8 | (uint32_t)blue;
 
-				globalState.depthBuffer[pixelID] = FLT_MAX;
-				globalState.frameBufferPixels[pixelID] = pixelColor;
+				g_globalState.depthBuffer[pixelID] = FLT_MAX;
+				g_globalState.frameBufferPixels[pixelID] = pixelColor;
 			}
 		}
 
@@ -295,9 +296,9 @@ int WinMain(
 			cameraTransform = translationMatrix(-p_camera->m_pos);
 		}*/
 
-		globalState.currentTime += frameTime;
-		if (globalState.currentTime >= 2.0f * Pi)
-			globalState.currentTime = 0.0f;
+		g_globalState.currentTime += frameTime;
+		if (g_globalState.currentTime >= 2.0f * g_Pi)
+			g_globalState.currentTime = 0.0f;
 
 		// Creating a spinning cube		
 		V3 cubeVertices[] =
@@ -328,7 +329,7 @@ int WinMain(
 
 		};
 
-		unsigned int modelIndexes[] =
+		uint32_t modelIndexes[] =
 		{
 			// Front
 			0, 1, 2,
@@ -351,14 +352,14 @@ int WinMain(
 		};
 
 		M4 transform = translationMatrix(0, 0, 2) *
-			rotationMatrix(globalState.currentTime, globalState.currentTime, globalState.currentTime) *
+			rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
 			scaleMatrix(1, 1, 1);
 
-		for (unsigned int indexID = 0; indexID < std::size(modelIndexes); indexID += 3)
+		for (uint32_t indexID = 0; indexID < std::size(modelIndexes); indexID += 3)
 		{
-			unsigned int index0 = modelIndexes[indexID + 0];
-			unsigned int index1 = modelIndexes[indexID + 1];
-			unsigned int index2 = modelIndexes[indexID + 2];
+			uint32_t index0 = modelIndexes[indexID + 0];
+			uint32_t index1 = modelIndexes[indexID + 1];
+			uint32_t index2 = modelIndexes[indexID + 2];
 
 			drawTriangle(cubeVertices[index0], cubeVertices[index1], cubeVertices[index2],
 				cubeColors[index0], cubeColors[index1], cubeColors[index2],
@@ -366,31 +367,31 @@ int WinMain(
 		}
 
 		RECT clientRect{};
-		GetClientRect(globalState.windowHandle, &clientRect);
-		unsigned int clientWidth = clientRect.right - clientRect.left;
-		unsigned int clientHeight = clientRect.bottom - clientRect.top;
+		GetClientRect(g_globalState.windowHandle, &clientRect);
+		uint32_t clientWidth = clientRect.right - clientRect.left;
+		uint32_t clientHeight = clientRect.bottom - clientRect.top;
 
 		BITMAPINFO bitMapInfo{};
 
 		bitMapInfo.bmiHeader.biSize = sizeof(tagBITMAPINFOHEADER);
-		bitMapInfo.bmiHeader.biWidth = globalState.frameBufferWidth;
-		bitMapInfo.bmiHeader.biHeight = globalState.frameBufferHeight;
+		bitMapInfo.bmiHeader.biWidth = g_globalState.frameBufferWidth;
+		bitMapInfo.bmiHeader.biHeight = g_globalState.frameBufferHeight;
 		bitMapInfo.bmiHeader.biPlanes = 1;
 		bitMapInfo.bmiHeader.biBitCount = 32;
 		bitMapInfo.bmiHeader.biCompression = BI_RGB;
 		bitMapInfo.bmiHeader.biSizeImage = 0;
 
 		Assert(StretchDIBits(
-			globalState.deviceContext,
+			g_globalState.deviceContext,
 			0,
 			0,
 			clientWidth,
 			clientHeight,
 			0,
 			0,
-			globalState.frameBufferWidth,
-			globalState.frameBufferHeight,
-			globalState.frameBufferPixels.data(),
+			g_globalState.frameBufferWidth,
+			g_globalState.frameBufferHeight,
+			g_globalState.frameBufferPixels.data(),
 			&bitMapInfo,
 			DIB_RGB_COLORS,
 			SRCCOPY

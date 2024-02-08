@@ -134,9 +134,9 @@
     <ClCompile Include="vectors.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="matrices.h" />
-    <ClInclude Include="rendering-engine.h" />
-    <ClInclude Include="vectors.h" />
+    <ClInclude Include="matrices.hpp" />
+    <ClInclude Include="rendering-engine.hpp" />
+    <ClInclude Include="vectors.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

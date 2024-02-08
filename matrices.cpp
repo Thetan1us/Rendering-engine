@@ -1,7 +1,7 @@
 #include <cmath>
+#include <array>
 
-#include "vectors.h"
-#include "matrices.h"
+#include "matrices.hpp"
 
 M4 identityM4()
 {
@@ -39,7 +39,8 @@ M4 translationMatrix(float x, float y, float z)
 	return result;
 }
 
-M4 translationMatrix(const V3 &pos)
+template<typename T>
+M4 translationMatrix(const T &pos)
 {
 	M4 result = translationMatrix(pos.m_x, pos.m_y, pos.m_z);
 	return result;
@@ -69,5 +70,11 @@ M4 rotationMatrix(float x, float y, float z)
 
 	result = rotateZ * rotateY * rotateX;
 
+	return result;
+}
+
+V4 operator*(const M4 &a, const V4 &b)
+{
+	V4 result = a.m_v[0] * b.m_x + a.m_v[1] * b.m_y + a.m_v[2] * b.m_z + a.m_v[3] * b.m_w;
 	return result;
 }
