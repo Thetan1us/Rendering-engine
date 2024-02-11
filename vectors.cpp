@@ -2,11 +2,11 @@
 
 #include "vectors.hpp"
 
-union M4
+float vectorProduct(const V2 &a, const V2 &b)
 {
-	std::array<V4, 4> m_v;
-	std::array<float, 16> m_e;
-};
+	float result = a.m_x * b.m_y - a.m_y * b.m_x;
+	return result;
+}
 
 V2 v2(float arg)
 {

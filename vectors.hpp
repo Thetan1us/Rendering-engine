@@ -60,6 +60,7 @@ union V4
 	std::array<float, 4> m_e;
 };
 
+float vectorProduct(const V2 &a, const V2 &b);
 V2 v2(float arg);
 V2 v2(float x, float y);
 V2 v2(int x, int y);

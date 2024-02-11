@@ -20,12 +20,6 @@ V2 projectPoint(const V3 &m_pos)
 	return result;
 }
 
-float vectorProduct(const V2 &a, const V2 &b)
-{
-	float result = a.m_x * b.m_y - a.m_y * b.m_x;
-	return result;
-}
-
 void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &modelVertex2,
 	const V3 &modelColor0, const V3 &modelColor1, const V3 &modelColor2,
 	const M4 &transform)
@@ -192,12 +186,6 @@ int WinMain(
 		float frameTime = float(endTime.QuadPart - startTime.QuadPart) / float(timerFrequency.QuadPart);
 		startTime = endTime;
 
-		bool wDown = false;
-		bool aDown = false;
-		bool sDown = false;
-		bool dDown = false;
-		bool qDown = false;
-		bool eDown = false;
 		MSG message{};
 		while (PeekMessageA(&message, g_globalState.windowHandle, 0, 0, PM_REMOVE))
 		{
@@ -208,27 +196,27 @@ int WinMain(
 			case WM_KEYDOWN:
 			{
 				uint32_t keyCode = message.wParam;
-				bool isDown = !(message.lParam >> 31);
+				bool isDown = !((message.lParam >> 31) & 0x1);
 
 				switch (keyCode)
 				{
 				case 'W':
-					wDown = isDown;
+					g_globalState.wDown = isDown;
 					break;
 				case 'A':
-					aDown = isDown;
+					g_globalState.aDown = isDown;
 					break;
 				case 'S':
-					sDown = isDown;
+					g_globalState.sDown = isDown;
 					break;
 				case 'D':
-					dDown = isDown;
+					g_globalState.dDown = isDown;
 					break;
 				case 'Q':
-					qDown = isDown;
+					g_globalState.qDown = isDown;
 					break;
 				case 'E':
-					eDown = isDown;
+					g_globalState.eDown = isDown;
 					break;
 				}
 			}
@@ -261,40 +249,40 @@ int WinMain(
 		}
 
 		// Calculating camera position;
-		/*M4 cameraTransform = identityM4();
+		M4 cameraTransform = identityM4();
 		{
-			Camera *p_camera = &globalState.camera;
+			Camera *p_camera = &g_globalState.camera;
 			V3 frontMove = v3(0, 0, 1);
 			V3 sideMove = v3(1, 0, 0);
 			V3 verticalMove = v3(0, 1, 0);
 
-			if (wDown)
+			if (g_globalState.wDown)
 			{
-				p_camera->m_pos += (frontMove * frameTime);
+				p_camera->m_pos += frontMove * frameTime;
 			}
-			if (sDown)
+			if (g_globalState.sDown)
 			{
-				p_camera->m_pos -= (frontMove * frameTime);
+				p_camera->m_pos -= frontMove * frameTime;
 			}
-			if (aDown)
+			if (g_globalState.aDown)
 			{
-				p_camera->m_pos += (sideMove * frameTime);
+				p_camera->m_pos -= sideMove * frameTime;
 			}
-			if (dDown)
+			if (g_globalState.dDown)
 			{
-				p_camera->m_pos -= (sideMove * frameTime);
+				p_camera->m_pos += sideMove * frameTime;
 			}
-			if (eDown)
+			if (g_globalState.eDown)
 			{
-				p_camera->m_pos += (verticalMove * frameTime);
+				p_camera->m_pos += verticalMove * frameTime; 
 			}
-			if (qDown)
+			if (g_globalState.qDown)
 			{
 				p_camera->m_pos -= verticalMove * frameTime;
 			}
 
 			cameraTransform = translationMatrix(-p_camera->m_pos);
-		}*/
+		}
 
 		g_globalState.currentTime += frameTime;
 		if (g_globalState.currentTime >= 2.0f * g_Pi)
@@ -351,9 +339,10 @@ int WinMain(
 			3, 7, 4,
 		};
 
-		M4 transform = translationMatrix(0, 0, 2) *
-			rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
-			scaleMatrix(1, 1, 1);
+		M4 transform =  cameraTransform *
+						translationMatrix(0, 0, 2) *
+						rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
+						scaleMatrix(1, 1, 1);
 
 		for (uint32_t indexID = 0; indexID < std::size(modelIndexes); indexID += 3)
 		{

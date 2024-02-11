@@ -39,8 +39,7 @@ M4 translationMatrix(float x, float y, float z)
 	return result;
 }
 
-template<typename T>
-M4 translationMatrix(const T &pos)
+M4 translationMatrix(const V3 &pos)
 {
 	M4 result = translationMatrix(pos.m_x, pos.m_y, pos.m_z);
 	return result;

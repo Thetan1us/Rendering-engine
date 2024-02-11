@@ -12,10 +12,10 @@
 #define GigaBytes(Val) (MegaBytes(Val) * 1024LL)
 #define TeraBytes(Val) (GigaBytes(Val) * 1024LL)
 
-//struct Camera
-//{
-//	V3 m_pos;
-//};
+struct Camera
+{
+	V3 m_pos;
+};
 
 struct GlobalState
 {
@@ -29,5 +29,12 @@ struct GlobalState
 
 	float currentTime;
 
-	//Camera camera;
+	bool wDown;
+	bool aDown;
+	bool sDown;
+	bool dDown;
+	bool qDown;
+	bool eDown;
+
+	Camera camera;
 };
