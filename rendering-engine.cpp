@@ -257,6 +257,7 @@ int WinMain(
 			V2 currMousePos{};
 
 			// Getting cursor position
+			if (GetActiveWindow() == g_globalState.windowHandle)
 			{
 				POINT winMousePos{};
 				Assert(GetCursorPos(&winMousePos));
