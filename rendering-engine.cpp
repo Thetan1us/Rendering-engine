@@ -252,9 +252,62 @@ int WinMain(
 		M4 cameraTransform = identityM4();
 		{
 			Camera *p_camera = &g_globalState.camera;
-			V3 frontMove = v3(0, 0, 1);
-			V3 sideMove = v3(1, 0, 0);
-			V3 verticalMove = v3(0, 1, 0);
+
+			bool mouseDown = false;
+			V2 currMousePos{};
+
+			// Getting cursor position
+			{
+				POINT winMousePos{};
+				Assert(GetCursorPos(&winMousePos));
+				Assert(ScreenToClient(g_globalState.windowHandle, &winMousePos));
+
+				RECT clientRect{};
+				Assert(GetClientRect(g_globalState.windowHandle, &clientRect));
+				winMousePos.y = clientRect.bottom - winMousePos.y;
+
+				currMousePos.m_x = (float)winMousePos.x / (float)(clientRect.right - clientRect.left);
+				currMousePos.m_y = (float)winMousePos.y / (float)(clientRect.bottom - clientRect.top);
+
+				mouseDown = (GetKeyState(VK_RBUTTON) & 0x80) != 0;
+			}
+
+			if (mouseDown)
+			{
+				if (!p_camera->prevMousedown)
+				{
+					p_camera->m_prevMousePos = currMousePos;
+				}
+				V2 mousePosDiff = currMousePos - p_camera->m_prevMousePos;
+				p_camera->m_pitch += mousePosDiff.m_y;
+				p_camera->m_yaw += mousePosDiff.m_x;
+
+				p_camera->m_prevMousePos = currMousePos;
+			}
+
+			p_camera->prevMousedown = mouseDown;
+
+			M4 yawTransform = rotationMatrix(0, p_camera->m_yaw, 0);
+			M4 pitchTransform = rotationMatrix(-p_camera->m_pitch, 0, 0);
+			M4 cameraAxisTransorm = pitchTransform * yawTransform;
+
+			V3 sideMove     = normalize((cameraAxisTransorm * v4(1, 0, 0, 0)).m_xyz);
+			V3 verticalMove = normalize((cameraAxisTransorm * v4(0, 1, 0, 0)).m_xyz);
+			V3 frontMove    = normalize((cameraAxisTransorm * v4(0, 0, 1, 0)).m_xyz);
+
+			M4 cameraViewTransform = identityM4();
+
+			cameraViewTransform.m_v[0].m_x = sideMove.m_x;
+			cameraViewTransform.m_v[1].m_x = sideMove.m_y;
+			cameraViewTransform.m_v[2].m_x = sideMove.m_z;
+
+			cameraViewTransform.m_v[0].m_y = verticalMove.m_x;
+			cameraViewTransform.m_v[1].m_y = verticalMove.m_y;
+			cameraViewTransform.m_v[2].m_y = verticalMove.m_z;
+
+			cameraViewTransform.m_v[0].m_z = frontMove.m_x;
+			cameraViewTransform.m_v[1].m_z = frontMove.m_y;
+			cameraViewTransform.m_v[2].m_z = frontMove.m_z;
 
 			if (g_globalState.wDown)
 			{
@@ -274,14 +327,14 @@ int WinMain(
 			}
 			if (g_globalState.eDown)
 			{
-				p_camera->m_pos += verticalMove * frameTime; 
+				p_camera->m_pos += verticalMove * frameTime;
 			}
 			if (g_globalState.qDown)
 			{
 				p_camera->m_pos -= verticalMove * frameTime;
 			}
 
-			cameraTransform = translationMatrix(-p_camera->m_pos);
+			cameraTransform = cameraViewTransform * translationMatrix(-p_camera->m_pos);
 		}
 
 		g_globalState.currentTime += frameTime;
@@ -339,10 +392,10 @@ int WinMain(
 			3, 7, 4,
 		};
 
-		M4 transform =  cameraTransform *
-						translationMatrix(0, 0, 2) *
-						rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
-						scaleMatrix(1, 1, 1);
+		M4 transform = cameraTransform *
+			translationMatrix(0, 0, 2) *
+			rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
+			scaleMatrix(1, 1, 1);
 
 		for (uint32_t indexID = 0; indexID < std::size(modelIndexes); indexID += 3)
 		{

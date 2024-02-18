@@ -14,7 +14,13 @@
 
 struct Camera
 {
+	bool prevMousedown;
+	V2 m_prevMousePos;
 	V3 m_pos;
+
+	float m_yaw;
+	float m_pitch;
+	
 };
 
 struct GlobalState

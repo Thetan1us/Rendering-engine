@@ -137,8 +137,16 @@ V3 operator*(float a, const V3 &b)
 	return result;
 }
 
+V3 operator/(const V3 &a, float b)
+{
+	V3 result;
+	result.m_x = a.m_x / b;
+	result.m_y = a.m_y / b;
+	result.m_z = a.m_z / b;
+	return result;
+}
 
-V3 operator-(V3 &a)
+V3 operator-(const V3 &a)
 {
 	V3 result;
 	result.m_x = -a.m_x;
@@ -147,11 +155,28 @@ V3 operator-(V3 &a)
 	return result;
 }
 
+V3 normalize(const V3 &a)
+{
+	float length = sqrt(a.m_x * a.m_x + a.m_y * a.m_y + a.m_z * a.m_z);
+	V3 result = a / length;
+	return result;
+}
+
 V4 v4(const V3 &a, float w)
 {
 	V4 result{};
 	result.m_xyz = a;
 	result.m_alpha = w;
+	return result;
+}
+
+V4 v4(float x, float y, float z, float w)
+{
+	V4 result{};
+	result.m_x = x;
+	result.m_y = y;
+	result.m_z = z;
+	result.m_w = w;
 	return result;
 }
 
