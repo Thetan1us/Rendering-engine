@@ -7,15 +7,14 @@
 #include "rendering-engine.hpp"
 
 static GlobalState g_globalState;
-static float g_Pi = 3.14159f;
+extern float g_Pi = 3.14159f;
 
-V2 projectPoint(const V3 &m_pos)
+V2 ndcToPixels(const V2 &m_pos)
 {
 	// NDC
 	V2 result{};
-	result = m_pos.m_xy / m_pos.m_z;
 	// Pixels
-	result = 0.5f * (result + v2(1.0f, 1.0f));
+	result = 0.5f * (m_pos + v2(1.0f, 1.0f));
 	result = result * v2(g_globalState.frameBufferWidth, g_globalState.frameBufferHeight);
 	return result;
 }
@@ -24,13 +23,17 @@ void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &mode
 	const V3 &modelColor0, const V3 &modelColor1, const V3 &modelColor2,
 	const M4 &transform)
 {
-	V3 transformedPoint0 = (transform * v4(modelVertex0, 1.0f)).m_xyz;
-	V3 transformedPoint1 = (transform * v4(modelVertex1, 1.0f)).m_xyz;
-	V3 transformedPoint2 = (transform * v4(modelVertex2, 1.0f)).m_xyz;
+	V4 transformedPoint0 = (transform * v4(modelVertex0, 1.0f));
+	V4 transformedPoint1 = (transform * v4(modelVertex1, 1.0f));
+	V4 transformedPoint2 = (transform * v4(modelVertex2, 1.0f));
 
-	V2 pointA = projectPoint(transformedPoint0);
-	V2 pointB = projectPoint(transformedPoint1);
-	V2 pointC = projectPoint(transformedPoint2);
+	transformedPoint0.m_xyz /= transformedPoint0.m_w;
+	transformedPoint1.m_xyz /= transformedPoint1.m_w;
+	transformedPoint2.m_xyz /= transformedPoint2.m_w;
+
+	V2 pointA = ndcToPixels(transformedPoint0.m_xy);
+	V2 pointB = ndcToPixels(transformedPoint1.m_xy);
+	V2 pointC = ndcToPixels(transformedPoint2.m_xy);
 
 	int edgePointLeft = min((int)pointA.m_x, min((int)pointB.m_x, (int)pointC.m_x));
 	int edgePointRight = max((int)ceil(pointA.m_x), max((int)ceil(pointB.m_x), (int)ceil(pointC.m_x)));
@@ -80,9 +83,8 @@ void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &mode
 				float t1 = -vectorLength2 / barycentricDiv;
 				float t2 = -vectorLength0 / barycentricDiv;
 
-				float depth = t0 * (1.0f / transformedPoint0.m_z) + t1 * (1.0f / transformedPoint1.m_z) + t2 * (1.0f / transformedPoint2.m_z);
-				depth = 1.0f / depth;
-				if (depth < g_globalState.depthBuffer[pixelID])
+				float depth = t0 * transformedPoint0.m_z + t1 * transformedPoint1.m_z + t2 * transformedPoint2.m_z;
+				if (depth >= 0.0f && depth <= 1.0f && depth < g_globalState.depthBuffer[pixelID])
 				{
 					V3 finalColor = t0 * modelColor0 + t1 * modelColor1 + t2 * modelColor2;
 					finalColor = finalColor * 255.0f;
@@ -136,7 +138,7 @@ int WinMain(
 		windowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 		windowClass.lpfnWndProc = Win32WindowCallback;
 		windowClass.hInstance = hInstance;
-		windowClass.hCursor = LoadCursorA(NULL, IDC_HAND);
+		windowClass.hCursor = LoadCursorA(NULL, IDC_ARROW);
 		windowClass.lpszClassName = "Rendering Engine";
 
 		if (!RegisterClassA(&windowClass))
@@ -169,8 +171,8 @@ int WinMain(
 		g_globalState.frameBufferWidth = clientRect.right - clientRect.left;
 		g_globalState.frameBufferHeight = clientRect.bottom - clientRect.top;
 
-		g_globalState.frameBufferWidth = 500;
-		g_globalState.frameBufferHeight = 500;
+		g_globalState.frameBufferWidth = 300;
+		g_globalState.frameBufferHeight = 300;
 
 		g_globalState.frameBufferPixels.resize(g_globalState.frameBufferHeight * g_globalState.frameBufferWidth);
 		g_globalState.depthBuffer.resize(g_globalState.frameBufferHeight * g_globalState.frameBufferWidth);
@@ -229,6 +231,12 @@ int WinMain(
 			}
 		}
 
+		RECT clientRect{};
+		GetClientRect(g_globalState.windowHandle, &clientRect);
+		uint32_t clientWidth = clientRect.right - clientRect.left;
+		uint32_t clientHeight = clientRect.bottom - clientRect.top;
+		float aspectRatio = float(clientWidth) / float(clientHeight);
+
 		// All pixels are set to 0
 
 		for (uint32_t y = 0; y < g_globalState.frameBufferHeight; ++y)
@@ -237,10 +245,10 @@ int WinMain(
 			{
 				uint32_t pixelID = y * g_globalState.frameBufferWidth + x;
 
-				unsigned __int8 alpha = 255;
-				unsigned __int8 red = (unsigned __int8)0;
-				unsigned __int8 green = (unsigned __int8)0;
-				unsigned __int8 blue = (unsigned __int8)0;
+				uint8_t alpha = 255;
+				uint8_t red = (uint8_t)0;
+				uint8_t green = (uint8_t)0;
+				uint8_t blue = (uint8_t)0;
 				uint32_t pixelColor = (uint32_t)alpha << 24 | (uint32_t)red << 16 | (uint32_t)green << 8 | (uint32_t)blue;
 
 				g_globalState.depthBuffer[pixelID] = FLT_MAX;
@@ -263,19 +271,17 @@ int WinMain(
 				Assert(GetCursorPos(&winMousePos));
 				Assert(ScreenToClient(g_globalState.windowHandle, &winMousePos));
 
-				RECT clientRect{};
-				Assert(GetClientRect(g_globalState.windowHandle, &clientRect));
 				winMousePos.y = clientRect.bottom - winMousePos.y;
 
-				currMousePos.m_x = (float)winMousePos.x / (float)(clientRect.right - clientRect.left);
-				currMousePos.m_y = (float)winMousePos.y / (float)(clientRect.bottom - clientRect.top);
+				currMousePos.m_x = (float)winMousePos.x / (float)(clientWidth);
+				currMousePos.m_y = (float)winMousePos.y / (float)(clientHeight);
 
 				mouseDown = (GetKeyState(VK_RBUTTON) & 0x80) != 0;
 			}
 
 			if (mouseDown)
 			{
-				if (!p_camera->prevMousedown)
+				if (!p_camera->m_prevMousedown)
 				{
 					p_camera->m_prevMousePos = currMousePos;
 				}
@@ -286,7 +292,7 @@ int WinMain(
 				p_camera->m_prevMousePos = currMousePos;
 			}
 
-			p_camera->prevMousedown = mouseDown;
+			p_camera->m_prevMousedown = mouseDown;
 
 			M4 yawTransform = rotationMatrix(0, p_camera->m_yaw, 0);
 			M4 pitchTransform = rotationMatrix(-p_camera->m_pitch, 0, 0);
@@ -393,10 +399,11 @@ int WinMain(
 			3, 7, 4,
 		};
 
-		M4 transform = cameraTransform *
-			translationMatrix(0, 0, 2) *
-			rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
-			scaleMatrix(1, 1, 1);
+		M4 transform = perspectiveMatrix(80.0f, aspectRatio, 0.1f, 1000.0f) * 
+			           cameraTransform *
+			           translationMatrix(0, 0, 2) *
+			           rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
+			           scaleMatrix(1, 1, 1);
 
 		for (uint32_t indexID = 0; indexID < std::size(modelIndexes); indexID += 3)
 		{
@@ -408,11 +415,6 @@ int WinMain(
 				cubeColors[index0], cubeColors[index1], cubeColors[index2],
 				transform);
 		}
-
-		RECT clientRect{};
-		GetClientRect(g_globalState.windowHandle, &clientRect);
-		uint32_t clientWidth = clientRect.right - clientRect.left;
-		uint32_t clientHeight = clientRect.bottom - clientRect.top;
 
 		BITMAPINFO bitMapInfo{};
 

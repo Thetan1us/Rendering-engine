@@ -77,6 +77,7 @@ V3 operator+(const V3 &a, const V3 &b);
 V3 operator*(const V3 &a, float b);
 V3 operator*(float a, const V3 &b);
 V3 operator-(const V3 &a);
+V3 operator/=(V3 &a, const float b);
 V3 normalize(const V3 &a);
 V4 v4(const V3 &a, float w);
 V4 v4(float x, float y, float z, float w);

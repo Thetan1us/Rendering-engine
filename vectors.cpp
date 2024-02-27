@@ -155,6 +155,14 @@ V3 operator-(const V3 &a)
 	return result;
 }
 
+V3 operator/=(V3 &a, const float b)
+{
+	a.m_x /= b;
+	a.m_y /= b;
+	a.m_z /= b;
+	return a;
+}
+
 V3 normalize(const V3 &a)
 {
 	float length = sqrt(a.m_x * a.m_x + a.m_y * a.m_y + a.m_z * a.m_z);

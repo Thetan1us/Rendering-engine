@@ -14,7 +14,7 @@
 
 struct Camera
 {
-	bool prevMousedown;
+	bool m_prevMousedown;
 	V2 m_prevMousePos;
 	V3 m_pos;
 

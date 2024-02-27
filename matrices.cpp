@@ -3,6 +3,8 @@
 
 #include "matrices.hpp"
 
+extern float g_Pi;
+
 M4 identityM4()
 {
 	M4 result{};
@@ -75,5 +77,20 @@ M4 rotationMatrix(float x, float y, float z)
 V4 operator*(const M4 &a, const V4 &b)
 {
 	V4 result = a.m_v[0] * b.m_x + a.m_v[1] * b.m_y + a.m_v[2] * b.m_z + a.m_v[3] * b.m_w;
+	return result;
+}
+
+M4 perspectiveMatrix(float fov, float aspectRatio, float nearZ, float farZ)
+{
+	M4 result{};
+	float fovRadians = fov / 180.0f * g_Pi;
+
+	result.m_v[0].m_x = 1.0f / (aspectRatio * tan(fovRadians / 2));
+	result.m_v[1].m_y = 1.0f / tan(fovRadians / 2);
+	result.m_v[2].m_z = -(farZ / (nearZ - farZ));
+	result.m_v[3].m_z = (nearZ * farZ) / (nearZ - farZ);
+	result.m_v[2].m_w = 1.0f;
+	result.m_v[3].m_w = 0.0f;
+
 	return result;
 }
