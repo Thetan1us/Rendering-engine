@@ -11,22 +11,21 @@ extern float g_Pi = 3.14159f;
 
 V2 ndcToPixels(const V2 &m_pos)
 {
-	// NDC
 	V2 result{};
-	// Pixels
 	result = 0.5f * (m_pos + v2(1.0f, 1.0f));
 	result = result * v2(g_globalState.frameBufferWidth, g_globalState.frameBufferHeight);
 	return result;
 }
 
 void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &modelVertex2,
-	const V3 &modelColor0, const V3 &modelColor1, const V3 &modelColor2,
-	const M4 &transform)
+	const V2 &modelUv0, const V2 &modelUv1, const V2 &modelUv2,
+	const M4 &transform, Texture texture)
 {
 	V4 transformedPoint0 = (transform * v4(modelVertex0, 1.0f));
 	V4 transformedPoint1 = (transform * v4(modelVertex1, 1.0f));
 	V4 transformedPoint2 = (transform * v4(modelVertex2, 1.0f));
 
+	// Pixels normalization
 	transformedPoint0.m_xyz /= transformedPoint0.m_w;
 	transformedPoint1.m_xyz /= transformedPoint1.m_w;
 	transformedPoint2.m_xyz /= transformedPoint2.m_w;
@@ -86,11 +85,21 @@ void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &mode
 				float depth = t0 * transformedPoint0.m_z + t1 * transformedPoint1.m_z + t2 * transformedPoint2.m_z;
 				if (depth >= 0.0f && depth <= 1.0f && depth < g_globalState.depthBuffer[pixelID])
 				{
-					V3 finalColor = t0 * modelColor0 + t1 * modelColor1 + t2 * modelColor2;
-					finalColor = finalColor * 255.0f;
-					uint32_t finalColor32 = (uint32_t)0xFF << 24 | (uint32_t)finalColor.m_red << 16 | (uint32_t)finalColor.m_green << 8 | (uint32_t)finalColor.m_blue;
 
-					g_globalState.frameBufferPixels[pixelID] = finalColor32;
+					V2 uv = t0 * modelUv0 + t1 * modelUv1 + t2 * modelUv2;
+					int32_t texelX = (int32_t)floor(uv.m_x * (texture.m_width - 1));
+					int32_t texelY = (int32_t)floor(uv.m_y * (texture.m_height - 1));
+					uint32_t texelColor = 0;
+					if (texelX >= 0 && texelX < texture.m_width &&
+						texelY >= 0 && texelY < texture.m_height)
+					{
+						texelColor = texture.m_textels[texelY * texture.m_width + texelX];
+					}
+					else
+					{
+						texelColor = 0xFF00FF00;
+					}
+					g_globalState.frameBufferPixels[pixelID] = texelColor;
 					g_globalState.depthBuffer[pixelID] = depth;
 				}
 
@@ -181,6 +190,24 @@ int WinMain(
 	LARGE_INTEGER startTime{};
 	LARGE_INTEGER endTime{};
 	Assert(QueryPerformanceCounter(&startTime));
+
+	Texture checkerTexture{};
+	{
+		checkerTexture.m_width = 32;
+		checkerTexture.m_height = 32;
+		checkerTexture.m_textels.resize(checkerTexture.m_width * checkerTexture.m_height);
+
+		for (int y = 0; y < checkerTexture.m_height; ++y)
+		{
+			for (int x = 0; x < checkerTexture.m_width; ++x)
+			{
+				uint32_t texelID = y * checkerTexture.m_width + x;
+				uint32_t colorChannel = 255 * ((x + (y % 2)) % 2);
+
+				checkerTexture.m_textels[texelID] = (uint32_t)0xFF << 24 | (uint32_t)colorChannel << 16 | (uint32_t)colorChannel << 8 | (uint32_t)colorChannel;
+			}
+		}
+	}
 
 	while (g_globalState.isRunning)
 	{
@@ -273,8 +300,8 @@ int WinMain(
 
 				winMousePos.y = clientRect.bottom - winMousePos.y;
 
-				currMousePos.m_x = (float)winMousePos.x / (float)(clientWidth);
-				currMousePos.m_y = (float)winMousePos.y / (float)(clientHeight);
+				currMousePos.m_x = float(winMousePos.x) / float(clientWidth);
+				currMousePos.m_y = float(winMousePos.y) / float(clientHeight);
 
 				mouseDown = (GetKeyState(VK_RBUTTON) & 0x80) != 0;
 			}
@@ -298,9 +325,9 @@ int WinMain(
 			M4 pitchTransform = rotationMatrix(-p_camera->m_pitch, 0, 0);
 			M4 cameraAxisTransorm = pitchTransform * yawTransform;
 
-			V3 sideMove     = normalize((cameraAxisTransorm * v4(1, 0, 0, 0)).m_xyz);
+			V3 sideMove = normalize((cameraAxisTransorm * v4(1, 0, 0, 0)).m_xyz);
 			V3 verticalMove = normalize((cameraAxisTransorm * v4(0, 1, 0, 0)).m_xyz);
-			V3 frontMove    = normalize((cameraAxisTransorm * v4(0, 0, 1, 0)).m_xyz);
+			V3 frontMove = normalize((cameraAxisTransorm * v4(0, 0, 1, 0)).m_xyz);
 
 			M4 cameraViewTransform = identityM4();
 
@@ -363,17 +390,17 @@ int WinMain(
 			v3(0.5f, -0.5f, 0.5f),
 		};
 
-		V3 cubeColors[] =
+		V2 modelUV[] =
 		{
-			v3(1,0,0),
-			v3(0,1,0),
-			v3(0,0,1),
-			v3(1,0,1),
-
-			v3(1,1,0),
-			v3(0,1,1),
-			v3(1,0,1),
-			v3(1,1,1),
+			v2(0,0),
+			v2(1,0),
+			v2(1,1),
+			v2(0,1),
+			 
+			v2(0,0),
+			v2(1,0),
+			v2(1,1),
+			v2(0,1),
 
 		};
 
@@ -399,11 +426,11 @@ int WinMain(
 			3, 7, 4,
 		};
 
-		M4 transform = perspectiveMatrix(80.0f, aspectRatio, 0.1f, 1000.0f) * 
-			           cameraTransform *
-			           translationMatrix(0, 0, 2) *
-			           rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
-			           scaleMatrix(1, 1, 1);
+		M4 transform = perspectiveMatrix(80.0f, aspectRatio, 0.1f, 1000.0f) *
+			cameraTransform *
+			translationMatrix(0, 0, 2) *
+			rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
+			scaleMatrix(1, 1, 1);
 
 		for (uint32_t indexID = 0; indexID < std::size(modelIndexes); indexID += 3)
 		{
@@ -412,8 +439,8 @@ int WinMain(
 			uint32_t index2 = modelIndexes[indexID + 2];
 
 			drawTriangle(cubeVertices[index0], cubeVertices[index1], cubeVertices[index2],
-				cubeColors[index0], cubeColors[index1], cubeColors[index2],
-				transform);
+				modelUV[index0], modelUV[index1], modelUV[index2],
+				transform, checkerTexture);
 		}
 
 		BITMAPINFO bitMapInfo{};

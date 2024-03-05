@@ -12,6 +12,13 @@
 #define GigaBytes(Val) (MegaBytes(Val) * 1024LL)
 #define TeraBytes(Val) (GigaBytes(Val) * 1024LL)
 
+struct Texture
+{
+	uint32_t m_width;
+	uint32_t m_height;
+	std::vector<uint32_t> m_textels;
+};
+
 struct Camera
 {
 	bool m_prevMousedown;
