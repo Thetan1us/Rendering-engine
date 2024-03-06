@@ -18,7 +18,7 @@ V2 ndcToPixels(const V2 &m_pos)
 }
 
 void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &modelVertex2,
-	const V2 &modelUv0, const V2 &modelUv1, const V2 &modelUv2,
+	const V2 &modelUV0, const V2 &modelUV1, const V2 &modelUV2,
 	const M4 &transform, Texture texture)
 {
 	V4 transformedPoint0 = (transform * v4(modelVertex0, 1.0f));
@@ -85,8 +85,11 @@ void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &mode
 				float depth = t0 * transformedPoint0.m_z + t1 * transformedPoint1.m_z + t2 * transformedPoint2.m_z;
 				if (depth >= 0.0f && depth <= 1.0f && depth < g_globalState.depthBuffer[pixelID])
 				{
+					float oneOverW = t0 * (1.0f / transformedPoint0.m_w) + t1 * (1.0f / transformedPoint1.m_w) + t2 * (1.0f / transformedPoint2.m_w);
 
-					V2 uv = t0 * modelUv0 + t1 * modelUv1 + t2 * modelUv2;
+					V2 uv = t0 * (modelUV0 / transformedPoint0.m_w) + t1 * (modelUV1 / transformedPoint1.m_w) + t2 * (modelUV2 / transformedPoint2.m_w);
+					uv /= oneOverW;
+
 					int32_t texelX = (int32_t)floor(uv.m_x * (texture.m_width - 1));
 					int32_t texelY = (int32_t)floor(uv.m_y * (texture.m_height - 1));
 					uint32_t texelColor = 0;
@@ -323,7 +326,7 @@ int WinMain(
 
 			M4 yawTransform = rotationMatrix(0, p_camera->m_yaw, 0);
 			M4 pitchTransform = rotationMatrix(-p_camera->m_pitch, 0, 0);
-			M4 cameraAxisTransorm = pitchTransform * yawTransform;
+			M4 cameraAxisTransorm = yawTransform * pitchTransform;
 
 			V3 sideMove = normalize((cameraAxisTransorm * v4(1, 0, 0, 0)).m_xyz);
 			V3 verticalMove = normalize((cameraAxisTransorm * v4(0, 1, 0, 0)).m_xyz);
@@ -374,6 +377,8 @@ int WinMain(
 		g_globalState.currentTime += frameTime;
 		if (g_globalState.currentTime >= 2.0f * g_Pi)
 			g_globalState.currentTime = 0.0f;
+
+		g_globalState.currentTime = 0;
 
 		// Creating a spinning cube		
 		V3 cubeVertices[] =
@@ -427,10 +432,10 @@ int WinMain(
 		};
 
 		M4 transform = perspectiveMatrix(80.0f, aspectRatio, 0.1f, 1000.0f) *
-			cameraTransform *
-			translationMatrix(0, 0, 2) *
-			rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
-			scaleMatrix(1, 1, 1);
+			           cameraTransform *
+			           translationMatrix(0, 0, 2) *
+			           rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
+			           scaleMatrix(1, 1, 1);
 
 		for (uint32_t indexID = 0; indexID < std::size(modelIndexes); indexID += 3)
 		{

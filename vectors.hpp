@@ -69,6 +69,7 @@ V2 operator+(const V2 &a, const V2 &b);
 V2 operator-(const V2 &a, const V2 &b);
 V3 operator+=(V3 &a, const V3 &b);
 V3 operator-=(V3 &a, const V3 &b);
+V2 operator/=(V2 &a, const float b);
 V2 operator*(float a, const V2 &b);
 V2 operator*(const V2 &a, const V2 &b);
 V2 operator/(const V2 &a, float b);

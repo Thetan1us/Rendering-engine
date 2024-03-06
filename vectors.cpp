@@ -119,6 +119,12 @@ V3 operator-=(V3 &a, const V3 &b)
 	return a;
 }
 
+V2 operator/=(V2 &a, const float b)
+{
+	a = a / b;
+	return a;
+}
+
 V3 operator*(const V3 &a, float b)
 {
 	V3 result;
