@@ -19,6 +19,19 @@ struct Texture
 	std::vector<uint32_t> m_textels;
 };
 
+enum SamplerType
+{
+	SamplerType_none,
+	SamplerType_nearest,
+	SamplerType_bilinear,
+};
+
+struct Sampler
+{
+	SamplerType m_type;
+	uint32_t m_borderColor;
+};
+
 struct Camera
 {
 	bool m_prevMousedown;

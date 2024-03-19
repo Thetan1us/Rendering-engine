@@ -12,6 +12,16 @@ union V2
 	std::array<float, 2> m_e;
 };
 
+union V2int
+{
+	struct
+	{
+		int m_x, m_y;
+	};
+
+	std::array<float, 2> m_e;
+};
+
 union V3
 {
 	struct
@@ -65,7 +75,10 @@ V2 v2(float arg);
 V2 v2(float x, float y);
 V2 v2(int x, int y);
 V2 v2(uint32_t x, uint32_t y);
+// TODO
+V2int v2int(float a, float b);
 V2 operator+(const V2 &a, const V2 &b);
+V2int operator+(const V2int &a, const V2 &b);
 V2 operator-(const V2 &a, const V2 &b);
 V3 operator+=(V3 &a, const V3 &b);
 V3 operator-=(V3 &a, const V3 &b);
@@ -79,7 +92,9 @@ V3 operator*(const V3 &a, float b);
 V3 operator*(float a, const V3 &b);
 V3 operator-(const V3 &a);
 V3 operator/=(V3 &a, const float b);
+V3 operator*=(V3 &a, const float b);
 V3 normalize(const V3 &a);
+V3 lerp(V3 a, V3 b, float t);
 V4 v4(const V3 &a, float w);
 V4 v4(float x, float y, float z, float w);
 V4 operator+(const V4 &a, const V4 &b);

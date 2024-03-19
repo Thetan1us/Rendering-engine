@@ -40,6 +40,22 @@ V2 v2(uint32_t x, uint32_t y)
 	return result;
 }
 
+V2int v2int(float a, float b)
+{
+	V2int result{};
+	result.m_x = (int)a;
+	result.m_y = (int)b;
+	return result;
+}
+
+V2int operator+(const V2int &a, const V2 &b)
+{
+	V2int result;
+	result.m_x = a.m_x + b.m_x;
+	result.m_y = a.m_y + b.m_y;
+	return result;
+}
+
 V2 operator+(const V2 &a, const V2 &b)
 {
 	V2 result;
@@ -169,6 +185,12 @@ V3 operator/=(V3 &a, const float b)
 	return a;
 }
 
+V3 operator*=(V3 &a, const float b)
+{
+	a = a * b;
+	return a;
+}
+
 V3 normalize(const V3 &a)
 {
 	float length = sqrt(a.m_x * a.m_x + a.m_y * a.m_y + a.m_z * a.m_z);
@@ -176,7 +198,13 @@ V3 normalize(const V3 &a)
 	return result;
 }
 
-V4 v4(const V3 &a, float w)
+V3 lerp(V3 a, V3 b, float t)
+{
+	V3 result = (1.0f - t) * a + t * b;
+	return result;
+}
+
+V4 v4(const V3 &a, const float w)
 {
 	V4 result{};
 	result.m_xyz = a;

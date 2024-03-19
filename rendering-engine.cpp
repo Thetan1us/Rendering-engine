@@ -3,7 +3,6 @@
 #include <Windows.h>
 
 #include "matrices.hpp"
-#include "vectors.hpp"
 #include "rendering-engine.hpp"
 
 static GlobalState g_globalState;
@@ -17,9 +16,26 @@ V2 ndcToPixels(const V2 &m_pos)
 	return result;
 }
 
+V3 colorU32ToRGB(int color)
+{
+	V3 result{};
+	result.m_red = (color >> 16) & 0xFF;
+	result.m_green = (color >> 8) & 0xFF;
+	result.m_blue = (color >> 0) & 0xFF;
+	result /= 255.0f;
+	return result;
+}
+
+int colorRgbToU32(V3 color)
+{
+	color *= 255.0f;
+	int result = (uint32_t)0xFF << 24 | (uint32_t)color.m_red << 16 | (uint32_t)color.m_green << 8 | (uint32_t)color.m_blue;
+	return result;
+}
+
 void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &modelVertex2,
 	const V2 &modelUV0, const V2 &modelUV1, const V2 &modelUV2,
-	const M4 &transform, Texture texture)
+	const M4 &transform, Texture texture, Sampler sampler)
 {
 	V4 transformedPoint0 = (transform * v4(modelVertex0, 1.0f));
 	V4 transformedPoint1 = (transform * v4(modelVertex1, 1.0f));
@@ -35,9 +51,9 @@ void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &mode
 	V2 pointC = ndcToPixels(transformedPoint2.m_xy);
 
 	int edgePointLeft = min((int)pointA.m_x, min((int)pointB.m_x, (int)pointC.m_x));
-	int edgePointRight = max((int)ceil(pointA.m_x), max((int)ceil(pointB.m_x), (int)ceil(pointC.m_x)));
+	int edgePointRight = max((int)ceilf(pointA.m_x), max((int)ceilf(pointB.m_x), (int)ceilf(pointC.m_x)));
 	int edgePointBottom = min((int)pointA.m_y, min((int)pointB.m_y, (int)pointC.m_y));
-	int edgePointTop = max((int)ceil(pointA.m_y), max((int)ceil(pointB.m_y), (int)ceil(pointC.m_y)));
+	int edgePointTop = max((int)ceilf(pointA.m_y), max((int)ceilf(pointB.m_y), (int)ceilf(pointC.m_y)));
 
 	edgePointLeft = max(0, edgePointLeft);
 	edgePointLeft = min(g_globalState.frameBufferWidth - 1, edgePointLeft);
@@ -90,18 +106,67 @@ void drawTriangle(const V3 &modelVertex0, const V3 &modelVertex1, const V3 &mode
 					V2 uv = t0 * (modelUV0 / transformedPoint0.m_w) + t1 * (modelUV1 / transformedPoint1.m_w) + t2 * (modelUV2 / transformedPoint2.m_w);
 					uv /= oneOverW;
 
-					int32_t texelX = (int32_t)floor(uv.m_x * (texture.m_width - 1));
-					int32_t texelY = (int32_t)floor(uv.m_y * (texture.m_height - 1));
 					uint32_t texelColor = 0;
-					if (texelX >= 0 && texelX < texture.m_width &&
-						texelY >= 0 && texelY < texture.m_height)
+					switch (sampler.m_type)
 					{
-						texelColor = texture.m_textels[texelY * texture.m_width + texelX];
+						case SamplerType_nearest:
+						{
+							int32_t texelX = (int32_t)floor(uv.m_x * (texture.m_width - 1));
+							int32_t texelY = (int32_t)floor(uv.m_y * (texture.m_height - 1));
+							if (texelX >= 0 && texelX < texture.m_width &&
+								texelY >= 0 && texelY < texture.m_height)
+							{
+								texelColor = texture.m_textels[texelY * texture.m_width + texelX];
+							}
+							else
+							{
+								texelColor = 0xFF00FF00;
+							}
+						} break;
+
+						case SamplerType_bilinear:
+						{
+							V2 texelV2 = uv * v2(texture.m_width, texture.m_height) - v2(0.5f, 0.5f);
+							V2int texelPos[4]{};
+							texelPos[0] = v2int(floorf(texelV2.m_x), floorf(texelV2.m_y));
+							texelPos[1] = texelPos[0] + v2(1, 0);
+							texelPos[2] = texelPos[0] + v2(0, 1);
+							texelPos[3] = texelPos[0] + v2(1, 1);
+
+							V3 texelColors[4]{};
+							for (uint32_t texelID = 0; texelID < std::size(texelPos); ++texelID)
+							{
+								V2int currentTexelPos = texelPos[texelID];
+								if (currentTexelPos.m_x >= 0 && currentTexelPos.m_x < texture.m_width &&
+									currentTexelPos.m_y >= 0 && currentTexelPos.m_y < texture.m_height)
+								{
+									texelColors[texelID] = colorU32ToRGB(texture.m_textels[currentTexelPos.m_x * texture.m_width + currentTexelPos.m_y]);
+								}
+								else
+								{
+									texelColors[texelID] = colorU32ToRGB(sampler.m_borderColor);
+								}
+							}
+
+							// s and k are % between pixel xy coordinates and texel coordinate and for linear interpolation
+							float s = texelV2.m_x - floorf(texelV2.m_x);
+							float k = texelV2.m_y - floorf(texelV2.m_y);
+
+							V3 interpolated0 = lerp(texelColors[0], texelColors[1], s);
+							V3 interpolated1 = lerp(texelColors[2], texelColors[3], s);
+							V3 finalColor = lerp(interpolated0, interpolated1, k);
+
+							texelColor = colorRgbToU32(finalColor);
+
+						} break;
+
+						default:
+						{
+							InvalidCodePath;
+						}
 					}
-					else
-					{
-						texelColor = 0xFF00FF00;
-					}
+
+
 					g_globalState.frameBufferPixels[pixelID] = texelColor;
 					g_globalState.depthBuffer[pixelID] = depth;
 				}
@@ -122,15 +187,15 @@ LRESULT Win32WindowCallback(
 
 	switch (uMsg)
 	{
-	case WM_CLOSE:
-	case WM_DESTROY:
-	{
-		g_globalState.isRunning = false;
-	} break;
-	default:
-	{
-		result = DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	}
+		case WM_CLOSE:
+		case WM_DESTROY:
+		{
+			g_globalState.isRunning = false;
+		} break;
+		default:
+		{
+			result = DefWindowProcA(hWnd, uMsg, wParam, lParam);
+		}
 	}
 	return result;
 }
@@ -195,7 +260,11 @@ int WinMain(
 	Assert(QueryPerformanceCounter(&startTime));
 
 	Texture checkerTexture{};
+	Sampler sampler{};
 	{
+		sampler.m_type = SamplerType_bilinear;
+		sampler.m_borderColor = 0xFF00FF00;
+
 		checkerTexture.m_width = 32;
 		checkerTexture.m_height = 32;
 		checkerTexture.m_textels.resize(checkerTexture.m_width * checkerTexture.m_height);
@@ -223,41 +292,41 @@ int WinMain(
 		{
 			switch (message.message)
 			{
-			case WM_QUIT: g_globalState.isRunning = false; break;
-			case WM_KEYUP:
-			case WM_KEYDOWN:
-			{
-				uint32_t keyCode = message.wParam;
-				bool isDown = !((message.lParam >> 31) & 0x1);
-
-				switch (keyCode)
+				case WM_QUIT: g_globalState.isRunning = false; break;
+				case WM_KEYUP:
+				case WM_KEYDOWN:
 				{
-				case 'W':
-					g_globalState.wDown = isDown;
-					break;
-				case 'A':
-					g_globalState.aDown = isDown;
-					break;
-				case 'S':
-					g_globalState.sDown = isDown;
-					break;
-				case 'D':
-					g_globalState.dDown = isDown;
-					break;
-				case 'Q':
-					g_globalState.qDown = isDown;
-					break;
-				case 'E':
-					g_globalState.eDown = isDown;
+					uint32_t keyCode = message.wParam;
+					bool isDown = !((message.lParam >> 31) & 0x1);
+
+					switch (keyCode)
+					{
+						case 'W':
+							g_globalState.wDown = isDown;
+							break;
+						case 'A':
+							g_globalState.aDown = isDown;
+							break;
+						case 'S':
+							g_globalState.sDown = isDown;
+							break;
+						case 'D':
+							g_globalState.dDown = isDown;
+							break;
+						case 'Q':
+							g_globalState.qDown = isDown;
+							break;
+						case 'E':
+							g_globalState.eDown = isDown;
+							break;
+					}
+				}
+				default:
+				{
+					TranslateMessage(&message);
+					DispatchMessage(&message);
 					break;
 				}
-			}
-			default:
-			{
-				TranslateMessage(&message);
-				DispatchMessage(&message);
-				break;
-			}
 			}
 		}
 
@@ -401,7 +470,7 @@ int WinMain(
 			v2(1,0),
 			v2(1,1),
 			v2(0,1),
-			 
+
 			v2(0,0),
 			v2(1,0),
 			v2(1,1),
@@ -432,10 +501,10 @@ int WinMain(
 		};
 
 		M4 transform = perspectiveMatrix(80.0f, aspectRatio, 0.1f, 1000.0f) *
-			           cameraTransform *
-			           translationMatrix(0, 0, 2) *
-			           rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
-			           scaleMatrix(1, 1, 1);
+			cameraTransform *
+			translationMatrix(0, 0, 2) *
+			rotationMatrix(g_globalState.currentTime, g_globalState.currentTime, g_globalState.currentTime) *
+			scaleMatrix(1, 1, 1);
 
 		for (uint32_t indexID = 0; indexID < std::size(modelIndexes); indexID += 3)
 		{
@@ -445,7 +514,7 @@ int WinMain(
 
 			drawTriangle(cubeVertices[index0], cubeVertices[index1], cubeVertices[index2],
 				modelUV[index0], modelUV[index1], modelUV[index2],
-				transform, checkerTexture);
+				transform, checkerTexture, sampler);
 		}
 
 		BITMAPINFO bitMapInfo{};
