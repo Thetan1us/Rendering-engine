@@ -29,7 +29,7 @@ V3 colorU32ToRGB(int color)
 int colorRgbToU32(V3 color)
 {
 	color *= 255.0f;
-	int result = (uint32_t)0xFF << 24 | (uint32_t)color.m_red << 16 | (uint32_t)color.m_green << 8 | (uint32_t)color.m_blue;
+	uint32_t result = (uint32_t)0xFF << 24 | (uint32_t)color.m_red << 16 | (uint32_t)color.m_green << 8 | (uint32_t)color.m_blue;
 	return result;
 }
 
@@ -210,6 +210,7 @@ int WinMain(
 	LARGE_INTEGER timerFrequency{};
 	Assert(QueryPerformanceFrequency(&timerFrequency));
 
+	// Creating a window
 	{
 		WNDCLASSA windowClass{};
 		windowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
@@ -263,24 +264,34 @@ int WinMain(
 	Sampler sampler{};
 	{
 		sampler.m_type = SamplerType_bilinear;
-		sampler.m_borderColor = 0xFF00FF00;
+		sampler.m_borderColor = 0xFF000000;
 
-		checkerTexture.m_width = 32;
-		checkerTexture.m_height = 32;
+		uint32_t blockSize = 4;
+		uint32_t numBlocks = 8;
+
+		checkerTexture.m_width = blockSize * numBlocks;
+		checkerTexture.m_height = blockSize * numBlocks;
 		checkerTexture.m_textels.resize(checkerTexture.m_width * checkerTexture.m_height);
 
-		for (int y = 0; y < checkerTexture.m_height; ++y)
+		for (uint32_t y = 0; y < numBlocks; ++y)
 		{
-			for (int x = 0; x < checkerTexture.m_width; ++x)
+			for (uint32_t x = 0; x < numBlocks; ++x)
 			{
-				uint32_t texelID = y * checkerTexture.m_width + x;
 				uint32_t colorChannel = 255 * ((x + (y % 2)) % 2);
 
-				checkerTexture.m_textels[texelID] = (uint32_t)0xFF << 24 | (uint32_t)colorChannel << 16 | (uint32_t)colorChannel << 8 | (uint32_t)colorChannel;
+				for (uint32_t blockY = 0; blockY < blockSize; ++blockY)
+				{
+					for (uint32_t blockX = 0; blockX < blockSize; ++blockX)
+					{
+						uint32_t texelID = (y * blockSize + blockY) * checkerTexture.m_width + (x * blockSize + blockX);
+						checkerTexture.m_textels[texelID] = (uint32_t)0xFF << 24 | (uint32_t)colorChannel << 16 | (uint32_t)colorChannel << 8 | (uint32_t)colorChannel;
+					}
+				}
 			}
 		}
 	}
 
+	// Main cycle
 	while (g_globalState.isRunning)
 	{
 		Assert(QueryPerformanceCounter(&endTime));
